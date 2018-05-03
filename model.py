@@ -10,7 +10,10 @@ Input to the network is RGB image with binary channel indicating image completio
 Padding VALID: filter fits entirely, Padding SAME: preserves shape
 '''
 
-Z = tf.placeholder(tf.float32, shape=[None, 512, 512, 4], name='Z')
+BATCH_SZ = 1
+
+# Generator code
+G_Z = tf.placeholder(tf.float32, shape=[BATCH_SZ, 512, 512, 4], name='G_Z')
 G_Wconv1_1 = tf.get_variable('G_Wconv1_1', shape=[5, 5, 4, 64])
 G_bconv1_1 = tf.get_variable('G_bconv1_1', shape=[64])
 
@@ -47,13 +50,13 @@ G_bconv3_8 = tf.get_variable('G_bconv3_8', shape=[256])
 G_Wconv3_9 = tf.get_variable('G_Wconv3_9', shape=[3, 3, 256, 256])
 G_bconv3_9 = tf.get_variable('G_bconv3_9', shape=[256])
 
-G_Wdeconv4_1 = tf.get_variable('G_Wdeconv4_1', shape=[4, 4, 256, 128])
+G_Wdeconv4_1 = tf.get_variable('G_Wdeconv4_1', shape=[4, 4, 128, 256]) # NOTE: BACKWARDS, due to deconv
 G_bdeconv4_1 = tf.get_variable('G_bdeconv4_1', shape=[128])
 
 G_Wconv4_2 = tf.get_variable('G_Wconv4_2', shape=[3, 3, 128, 128])
 G_bconv4_2 = tf.get_variable('G_bconv4_2', shape=[128])
 
-G_Wdeconv5_1 = tf.get_variable('G_Wdeconv5_1', shape=[4, 4, 128, 64])
+G_Wdeconv5_1 = tf.get_variable('G_Wdeconv5_1', shape=[4, 4, 64, 128])
 G_bdeconv5_1 = tf.get_variable('G_bdeconv5_1', shape=[64])
 
 G_Wconv5_2 = tf.get_variable('G_Wconv5_2', shape=[3, 3, 64, 32])
@@ -102,14 +105,29 @@ def generator(z):
     G_h3_9 = tf.nn.relu(G_a3_9) # (None, 128, 128, 256)
 
     # NOTE: https://github.com/tensorflow/tensorflow/issues/2118 on why we need to put output shape
-    G_a4_1 = tf.nn.conv2d_transpose(G_h3_9, G_Wdeconv4_1, strides=[1, 2, 2, 1], padding='SAME', output_shape=[None, 256, 256, 128]) + G_bdeconv4_1
+    G_a4_1 = tf.nn.conv2d_transpose(G_h3_9, G_Wdeconv4_1, strides=[1, 2, 2, 1], padding='SAME', output_shape=[BATCH_SZ, 256, 256, 128]) + G_bdeconv4_1
     G_h4_1 = tf.nn.relu(G_a4_1) # (None, 256, 256, 128)
 
-    return G_h4_1
+    G_a4_2 = tf.nn.conv2d(G_h4_1, G_Wconv4_2, strides=[1, 1, 1, 1], padding='SAME') + G_bconv4_2
+    G_h4_2 = tf.nn.relu(G_a4_2) # (None, 256, 256, 128)
+
+    G_a5_1 = tf.nn.conv2d_transpose(G_h4_2, G_Wdeconv5_1, strides=[1, 2, 2, 1], padding='SAME', output_shape=[BATCH_SZ, 512, 512, 64]) + G_bdeconv5_1
+    G_h5_1 = tf.nn.relu(G_a5_1) # (None, 512, 512, 64)
+
+    G_a5_2 = tf.nn.conv2d(G_h5_1, G_Wconv5_2, strides=[1, 1, 1, 1], padding='SAME') + G_bconv5_2
+    G_h5_2 = tf.nn.relu(G_a5_2) # (None, 512, 512, 32)
+
+    G_a5_3 = tf.nn.conv2d(G_h5_2, G_Wconv5_3, strides=[1, 1, 1, 1], padding='SAME') + G_bconv5_3
+    G_h5_3 = tf.nn.sigmoid(G_a5_3) # (None, 512, 512, 3)
+
+    return G_h5_3
+
+# Local Discriminator code
+DL_X = tf.placeholder(tf.float32, shape=[BATCH_SZ, 512, 512, 4], name='DL_X')
 
 with tf.Session() as sess:
     sess.run(init_op)
-    Z_ = generate_rand_img(1, 512, 512, 4)
-    G_sample = generator(Z)
-    output = sess.run([G_sample], feed_dict={Z: Z_})
+    G_Z_ = generate_rand_img(1, 512, 512, 4)
+    G_sample = generator(G_Z)
+    output = sess.run([G_sample], feed_dict={G_Z: G_Z_})
     print(output[0].shape)
