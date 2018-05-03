@@ -123,7 +123,27 @@ def generator(z):
     return G_h5_3
 
 # Local Discriminator code
-DL_X = tf.placeholder(tf.float32, shape=[BATCH_SZ, 512, 512, 4], name='DL_X')
+DL_X = tf.placeholder(tf.float32, shape=[BATCH_SZ, 128, 128, 3], name='DL_X')
+DL_Wconv1 = tf.get_variable('DL_Wconv1', shape=[5, 5, 3, 64])
+DL_bconv1 = tf.get_variable('DL_bconv1', shape=[64])
+
+DL_Wconv2 = tf.get_variable('DL_Wconv2', shape=[5, 5, 64, 128])
+DL_bconv2 = tf.get_variable('DL_bconv2', shape=[128])
+
+DL_Wconv3 = tf.get_variable('DL_Wconv3', shape=[5, 5, 128, 256])
+DL_bconv3 = tf.get_variable('DL_bconv3', shape=[256])
+
+DL_Wconv4 = tf.get_variable('DL_Wconv4', shape=[5, 5, 256, 512])
+DL_bconv4 = tf.get_variable('DL_bconv4', shape=[512])
+
+DL_Wconv5 = tf.get_variable('DL_Wconv5', shape=[5, 5, 512, 512])
+DL_bconv5 = tf.get_variable('DL_bconv5', shape=[512])
+
+DL_Wdense6 = tf.get_variable('DL_Wdense6', shape=[8192, 1024])
+DL_bdense6 = tf.get_variable('DL_bdense6', shape=[1024])
+
+def local_discriminator(x): # Takes BATCH_SIZE x 128 x 128 x 3, outputs BATCH_SIZE x 1024
+    pass
 
 with tf.Session() as sess:
     sess.run(init_op)
