@@ -117,16 +117,16 @@ def generator(z):
     G_a3_3 = tf.nn.conv2d(G_h3_2, G_Wconv3_3, strides=[1, 1, 1, 1], padding='SAME') + G_bconv3_3
     G_h3_3 = tf.nn.relu(G_a3_3) # (None, 128, 128, 256)
 
-    G_a3_4 = tf.nn.conv2d(G_h3_3, G_Wdlconv3_4, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 2, 2, 1]) + G_bdlconv3_4
+    G_a3_4 = tf.nn.conv2d(G_h3_3, G_Wdlconv3_4, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 2, 2]) + G_bdlconv3_4
     G_h3_4 = tf.nn.relu(G_a3_4) # (None, 128, 128, 256)
 
-    G_a3_5 = tf.nn.conv2d(G_h3_4, G_Wdlconv3_5, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 4, 4, 1]) + G_bdlconv3_5
+    G_a3_5 = tf.nn.conv2d(G_h3_4, G_Wdlconv3_5, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 4, 4]) + G_bdlconv3_5
     G_h3_5 = tf.nn.relu(G_a3_5) # (None, 128, 128, 256)
 
-    G_a3_6 = tf.nn.conv2d(G_h3_5, G_Wdlconv3_6, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 8, 8, 1]) + G_bdlconv3_6
+    G_a3_6 = tf.nn.conv2d(G_h3_5, G_Wdlconv3_6, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 8, 8]) + G_bdlconv3_6
     G_h3_6 = tf.nn.relu(G_a3_6) # (None, 128, 128, 256)
 
-    G_a3_7 = tf.nn.conv2d(G_h3_6, G_Wdlconv3_7, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 16, 16, 1]) + G_bdlconv3_7
+    G_a3_7 = tf.nn.conv2d(G_h3_6, G_Wdlconv3_7, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 16, 16]) + G_bdlconv3_7
     G_h3_7 = tf.nn.relu(G_a3_7) # (None, 128, 128, 256)
 
     G_a3_8 = tf.nn.conv2d(G_h3_7, G_Wconv3_8, strides=[1, 1, 1, 1], padding='SAME') + G_bconv3_8
