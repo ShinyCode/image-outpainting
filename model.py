@@ -65,7 +65,6 @@ G_bconv5_2 = tf.get_variable('G_bconv5_2', shape=[32])
 G_Wconv5_3 = tf.get_variable('G_Wconv5_3', shape=[3, 3, 32, 3])
 G_bconv5_3 = tf.get_variable('G_bconv5_3', shape=[3])
 
-init_op = tf.global_variables_initializer()
 
 def generator(z):
     G_a1_1 = tf.nn.conv2d(z, G_Wconv1_1, strides=[1, 1, 1, 1], padding='SAME') + G_bconv1_1 # TODO: CHECK PADDING
@@ -123,31 +122,64 @@ def generator(z):
     return G_h5_3
 
 # Local Discriminator code
-DL_X = tf.placeholder(tf.float32, shape=[BATCH_SZ, 128, 128, 3], name='DL_X')
-DL_Wconv1 = tf.get_variable('DL_Wconv1', shape=[5, 5, 3, 64])
-DL_bconv1 = tf.get_variable('DL_bconv1', shape=[64])
+DG_X = tf.placeholder(tf.float32, shape=[BATCH_SZ, 128, 128, 3], name='DG_X')
+DG_Wconv1 = tf.get_variable('DG_Wconv1', shape=[5, 5, 3, 64])
+DG_bconv1 = tf.get_variable('DG_bconv1', shape=[64])
 
-DL_Wconv2 = tf.get_variable('DL_Wconv2', shape=[5, 5, 64, 128])
-DL_bconv2 = tf.get_variable('DL_bconv2', shape=[128])
+DG_Wconv2 = tf.get_variable('DG_Wconv2', shape=[5, 5, 64, 128])
+DG_bconv2 = tf.get_variable('DG_bconv2', shape=[128])
 
-DL_Wconv3 = tf.get_variable('DL_Wconv3', shape=[5, 5, 128, 256])
-DL_bconv3 = tf.get_variable('DL_bconv3', shape=[256])
+DG_Wconv3 = tf.get_variable('DG_Wconv3', shape=[5, 5, 128, 256])
+DG_bconv3 = tf.get_variable('DG_bconv3', shape=[256])
 
-DL_Wconv4 = tf.get_variable('DL_Wconv4', shape=[5, 5, 256, 512])
-DL_bconv4 = tf.get_variable('DL_bconv4', shape=[512])
+DG_Wconv4 = tf.get_variable('DG_Wconv4', shape=[5, 5, 256, 512])
+DG_bconv4 = tf.get_variable('DG_bconv4', shape=[512])
 
-DL_Wconv5 = tf.get_variable('DL_Wconv5', shape=[5, 5, 512, 512])
-DL_bconv5 = tf.get_variable('DL_bconv5', shape=[512])
+DG_Wconv5 = tf.get_variable('DG_Wconv5', shape=[5, 5, 512, 512])
+DG_bconv5 = tf.get_variable('DG_bconv5', shape=[512])
 
-DL_Wdense6 = tf.get_variable('DL_Wdense6', shape=[8192, 1024])
-DL_bdense6 = tf.get_variable('DL_bdense6', shape=[1024])
+DG_Wdense6 = tf.get_variable('DG_Wdense6', shape=[8192, 1024])
+DG_bdense6 = tf.get_variable('DG_bdense6', shape=[1024])
 
-def local_discriminator(x): # Takes BATCH_SIZE x 128 x 128 x 3, outputs BATCH_SIZE x 1024
-    pass
+
+def global_discriminator(x): # Takes BATCH_SIZE x 128 x 128 x 3, outputs BATCH_SIZE x 1024
+    DG_a1 = tf.nn.conv2d(x, DG_Wconv1, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv1
+    DG_h1 = tf.nn.relu(DG_a1) # (None, 64, 64, 64)
+
+    DG_a2 = tf.nn.conv2d(DG_h1, DG_Wconv2, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv2
+    DG_h2 = tf.nn.relu(DG_a2) # (None, 32, 32, 128)
+
+    DG_a3 = tf.nn.conv2d(DG_h2, DG_Wconv3, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv3
+    DG_h3 = tf.nn.relu(DG_a3) # (None, 16, 16, 256)
+
+    DG_a4 = tf.nn.conv2d(DG_h3, DG_Wconv4, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv4
+    DG_h4 = tf.nn.relu(DG_a4) # (None, 8, 8, 512)
+
+    DG_a5 = tf.nn.conv2d(DG_h4, DG_Wconv5, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv5
+    DG_h5 = tf.nn.relu(DG_a5) # (None, 4, 4, 512)
+
+    DG_h5_flat = tf.reshape(DG_h5, [BATCH_SZ, 8192])
+
+    DG_a6 = tf.matmul(DG_h5_flat, DG_Wdense6) + DG_bdense6
+    DG_h6 = tf.nn.relu(DG_a6) # (None, 1024)
+    return DG_h6
+
+C_Wdense1 = tf.get_variable('C_Wdense1', shape=[1024, 1])
+C_bdense1 = tf.get_variable('C_bdense1', shape=[1])
+
+def concatenator(global_x):
+    C_a1 = tf.matmul(global_x, C_Wdense1) + C_bdense1 # logits
+    C_h1 = tf.sigmoid(C_a1) # (None, 1)
+    return C_h1, C_a1
+
+init_op = tf.global_variables_initializer()
 
 with tf.Session() as sess:
     sess.run(init_op)
-    G_Z_ = generate_rand_img(1, 512, 512, 4)
-    G_sample = generator(G_Z)
-    output = sess.run([G_sample], feed_dict={G_Z: G_Z_})
+    # G_Z_ = generate_rand_img(1, 512, 512, 4)
+    # G_sample = generator(G_Z)
+    DG_X_ = generate_rand_img(1, 128, 128, 3)
+    DG_sample = global_discriminator(DG_X)
+    C_prob, _ = concatenator(DG_sample)
+    output = sess.run([C_prob], feed_dict={DG_X: DG_X_})
     print(output[0].shape)
