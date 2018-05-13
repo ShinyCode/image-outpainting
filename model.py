@@ -40,195 +40,242 @@ BATCH_SZ = 1
 
 # Generator code
 G_Z = tf.placeholder(tf.float32, shape=[BATCH_SZ, 512, 512, 4], name='G_Z')
-G_Wconv1_1 = tf.get_variable('G_Wconv1_1', shape=[5, 5, 4, 64])
-G_bconv1_1 = tf.get_variable('G_bconv1_1', shape=[64])
-
-G_Wconv2_1 = tf.get_variable('G_Wconv2_1', shape=[3, 3, 64, 128])
-G_bconv2_1 = tf.get_variable('G_bconv2_1', shape=[128])
-
-G_Wconv2_2 = tf.get_variable('G_Wconv2_2', shape=[3, 3, 128, 128])
-G_bconv2_2 = tf.get_variable('G_bconv2_2', shape=[128])
-
-G_Wconv3_1 = tf.get_variable('G_Wconv3_1', shape=[3, 3, 128, 256])
-G_bconv3_1 = tf.get_variable('G_bconv3_1', shape=[256])
-
-G_Wconv3_2 = tf.get_variable('G_Wconv3_2', shape=[3, 3, 256, 256])
-G_bconv3_2 = tf.get_variable('G_bconv3_2', shape=[256])
-
-G_Wconv3_3 = tf.get_variable('G_Wconv3_3', shape=[3, 3, 256, 256])
-G_bconv3_3 = tf.get_variable('G_bconv3_3', shape=[256])
-
-G_Wdlconv3_4 = tf.get_variable('G_Wdlconv3_4', shape=[3, 3, 256, 256])
-G_bdlconv3_4 = tf.get_variable('G_bdlconv3_4', shape=[256])
-
-G_Wdlconv3_5 = tf.get_variable('G_Wdlconv3_5', shape=[3, 3, 256, 256])
-G_bdlconv3_5 = tf.get_variable('G_bdlconv3_5', shape=[256])
-
-G_Wdlconv3_6 = tf.get_variable('G_Wdlconv3_6', shape=[3, 3, 256, 256])
-G_bdlconv3_6 = tf.get_variable('G_bdlconv3_6', shape=[256])
-
-G_Wdlconv3_7 = tf.get_variable('G_Wdlconv3_7', shape=[3, 3, 256, 256])
-G_bdlconv3_7 = tf.get_variable('G_bdlconv3_7', shape=[256])
-
-G_Wconv3_8 = tf.get_variable('G_Wconv3_8', shape=[3, 3, 256, 256])
-G_bconv3_8 = tf.get_variable('G_bconv3_8', shape=[256])
-
-G_Wconv3_9 = tf.get_variable('G_Wconv3_9', shape=[3, 3, 256, 256])
-G_bconv3_9 = tf.get_variable('G_bconv3_9', shape=[256])
-
-G_Wdeconv4_1 = tf.get_variable('G_Wdeconv4_1', shape=[4, 4, 128, 256]) # NOTE: BACKWARDS, due to deconv
-G_bdeconv4_1 = tf.get_variable('G_bdeconv4_1', shape=[128])
-
-G_Wconv4_2 = tf.get_variable('G_Wconv4_2', shape=[3, 3, 128, 128])
-G_bconv4_2 = tf.get_variable('G_bconv4_2', shape=[128])
-
-G_Wdeconv5_1 = tf.get_variable('G_Wdeconv5_1', shape=[4, 4, 64, 128])
-G_bdeconv5_1 = tf.get_variable('G_bdeconv5_1', shape=[64])
-
-G_Wconv5_2 = tf.get_variable('G_Wconv5_2', shape=[3, 3, 64, 32])
-G_bconv5_2 = tf.get_variable('G_bconv5_2', shape=[32])
-
-G_Wconv5_3 = tf.get_variable('G_Wconv5_3', shape=[3, 3, 32, 3])
-G_bconv5_3 = tf.get_variable('G_bconv5_3', shape=[3])
-
-theta_G = [G_Wconv1_1, G_bconv1_1, G_Wconv2_1, G_bconv2_1, G_Wconv2_2, G_bconv2_2, G_Wconv3_1, G_bconv3_1,
-           G_Wconv3_2, G_bconv3_2, G_Wconv3_3, G_bconv3_3, G_Wdlconv3_4, G_bdlconv3_4, G_Wdlconv3_5, G_bdlconv3_5,
-           G_Wdlconv3_6, G_bdlconv3_6, G_Wdlconv3_7, G_bdlconv3_7, G_Wconv3_8, G_bconv3_8, G_Wconv3_9, G_bconv3_9,
-           G_Wdeconv4_1, G_bdeconv4_1, G_Wconv4_2, G_bconv4_2, G_Wdeconv5_1, G_bdeconv5_1, G_Wconv5_2, G_bconv5_2,
-           G_Wconv5_3, G_bconv5_3]
-assert len(theta_G) == 34
 
 def generator(z):
-    G_a1_1 = tf.nn.conv2d(z, G_Wconv1_1, strides=[1, 1, 1, 1], padding='SAME') + G_bconv1_1 # TODO: CHECK PADDING
-    G_h1_1 = tf.nn.relu(G_a1_1) # (None, 512, 512, 64)
+    with tf.variable_scope('G', reuse=tf.AUTO_REUSE):
+        conv1 = tf.layers.conv2d(
+            inputs=z,
+            filters=64,
+            kernel_size=[5, 5],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a2_1 = tf.nn.conv2d(G_h1_1, G_Wconv2_1, strides=[1, 2, 2, 1], padding='SAME') + G_bconv2_1
-    G_h2_1 = tf.nn.relu(G_a2_1) # (None, 256, 256, 128)
+        conv2_1 = tf.layers.conv2d(
+            inputs=conv1,
+            filters=128,
+            kernel_size=[3, 3],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a2_2 = tf.nn.conv2d(G_h2_1, G_Wconv2_2, strides=[1, 1, 1, 1], padding='SAME') + G_bconv2_2
-    G_h2_2 = tf.nn.relu(G_a2_2) # (None, 256, 256, 128)
+        conv2_2 = tf.layers.conv2d(
+            inputs=conv2_1,
+            filters=128,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_1 = tf.nn.conv2d(G_h2_2, G_Wconv3_1, strides=[1, 2, 2, 1], padding='SAME') + G_bconv3_1
-    G_h3_1 = tf.nn.relu(G_a3_1) # (None, 128, 128, 256)
+        conv3_1 = tf.layers.conv2d(
+            inputs=conv2_2,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_2 = tf.nn.conv2d(G_h3_1, G_Wconv3_2, strides=[1, 1, 1, 1], padding='SAME') + G_bconv3_2
-    G_h3_2 = tf.nn.relu(G_a3_2) # (None, 128, 128, 256)
+        conv3_2 = tf.layers.conv2d(
+            inputs=conv3_1,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_3 = tf.nn.conv2d(G_h3_2, G_Wconv3_3, strides=[1, 1, 1, 1], padding='SAME') + G_bconv3_3
-    G_h3_3 = tf.nn.relu(G_a3_3) # (None, 128, 128, 256)
+        conv3_3 = tf.layers.conv2d(
+            inputs=conv3_2,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_4 = tf.nn.conv2d(G_h3_3, G_Wdlconv3_4, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 2, 2]) + G_bdlconv3_4
-    G_h3_4 = tf.nn.relu(G_a3_4) # (None, 128, 128, 256)
+        conv3_4 = tf.layers.conv2d(
+            inputs=conv3_3,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            dilation_rate=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_5 = tf.nn.conv2d(G_h3_4, G_Wdlconv3_5, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 4, 4]) + G_bdlconv3_5
-    G_h3_5 = tf.nn.relu(G_a3_5) # (None, 128, 128, 256)
+        conv3_5 = tf.layers.conv2d(
+            inputs=conv3_4,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            dilation_rate=(4, 4),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_6 = tf.nn.conv2d(G_h3_5, G_Wdlconv3_6, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 8, 8]) + G_bdlconv3_6
-    G_h3_6 = tf.nn.relu(G_a3_6) # (None, 128, 128, 256)
+        conv3_6 = tf.layers.conv2d(
+            inputs=conv3_5,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            dilation_rate=(8, 8),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_7 = tf.nn.conv2d(G_h3_6, G_Wdlconv3_7, strides=[1, 1, 1, 1], padding='SAME', dilations=[1, 1, 16, 16]) + G_bdlconv3_7
-    G_h3_7 = tf.nn.relu(G_a3_7) # (None, 128, 128, 256)
+        conv3_7 = tf.layers.conv2d(
+            inputs=conv3_6,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            dilation_rate=(16, 16),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_8 = tf.nn.conv2d(G_h3_7, G_Wconv3_8, strides=[1, 1, 1, 1], padding='SAME') + G_bconv3_8
-    G_h3_8 = tf.nn.relu(G_a3_8) # (None, 128, 128, 256)
+        conv3_8 = tf.layers.conv2d(
+            inputs=conv3_7,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a3_9 = tf.nn.conv2d(G_h3_8, G_Wconv3_9, strides=[1, 1, 1, 1], padding='SAME') + G_bconv3_9
-    G_h3_9 = tf.nn.relu(G_a3_9) # (None, 128, 128, 256)
+        conv3_9 = tf.layers.conv2d(
+            inputs=conv3_8,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    # NOTE: https://github.com/tensorflow/tensorflow/issues/2118 on why we need to put output shape
-    G_a4_1 = tf.nn.conv2d_transpose(G_h3_9, G_Wdeconv4_1, strides=[1, 2, 2, 1], padding='SAME', output_shape=[BATCH_SZ, 256, 256, 128]) + G_bdeconv4_1
-    G_h4_1 = tf.nn.relu(G_a4_1) # (None, 256, 256, 128)
+        deconv4_1 = tf.layers.conv2d_transpose(
+            inputs=conv3_9,
+            filters=128,
+            kernel_size=[4, 4],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a4_2 = tf.nn.conv2d(G_h4_1, G_Wconv4_2, strides=[1, 1, 1, 1], padding='SAME') + G_bconv4_2
-    G_h4_2 = tf.nn.relu(G_a4_2) # (None, 256, 256, 128)
+        conv4_2 = tf.layers.conv2d(
+            inputs=deconv4_1,
+            filters=128,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a5_1 = tf.nn.conv2d_transpose(G_h4_2, G_Wdeconv5_1, strides=[1, 2, 2, 1], padding='SAME', output_shape=[BATCH_SZ, 512, 512, 64]) + G_bdeconv5_1
-    G_h5_1 = tf.nn.relu(G_a5_1) # (None, 512, 512, 64)
+        deconv5_1 = tf.layers.conv2d_transpose(
+            inputs=conv4_2,
+            filters=64,
+            kernel_size=[4, 4],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a5_2 = tf.nn.conv2d(G_h5_1, G_Wconv5_2, strides=[1, 1, 1, 1], padding='SAME') + G_bconv5_2
-    G_h5_2 = tf.nn.relu(G_a5_2) # (None, 512, 512, 32)
+        conv5_2 = tf.layers.conv2d(
+            inputs=deconv5_1,
+            filters=32,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.nn.relu)
 
-    G_a5_3 = tf.nn.conv2d(G_h5_2, G_Wconv5_3, strides=[1, 1, 1, 1], padding='SAME') + G_bconv5_3
-    G_h5_3 = tf.nn.sigmoid(G_a5_3) # (None, 512, 512, 3)
+        conv5_3 = tf.layers.conv2d(
+            inputs=conv5_2,
+            filters=3,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            padding="same",
+            activation=tf.sigmoid)
 
-    return G_h5_3
+    return conv5_3
 
 # Local Discriminator code
 DG_X = tf.placeholder(tf.float32, shape=[BATCH_SZ, 256, 256, 3], name='DG_X')
-DG_Wconv1 = tf.get_variable('DG_Wconv1', shape=[5, 5, 3, 64])
-DG_bconv1 = tf.get_variable('DG_bconv1', shape=[64])
 
-DG_Wconv2 = tf.get_variable('DG_Wconv2', shape=[5, 5, 64, 128])
-DG_bconv2 = tf.get_variable('DG_bconv2', shape=[128])
+def global_discriminator(x):
+    with tf.variable_scope('DG', reuse=tf.AUTO_REUSE):
+        conv1 = tf.layers.conv2d(
+            inputs=x,
+            filters=64,
+            kernel_size=[5, 5],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-DG_Wconv3 = tf.get_variable('DG_Wconv3', shape=[5, 5, 128, 256])
-DG_bconv3 = tf.get_variable('DG_bconv3', shape=[256])
+        conv2 = tf.layers.conv2d(
+            inputs=conv1,
+            filters=128,
+            kernel_size=[5, 5],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-DG_Wconv4 = tf.get_variable('DG_Wconv4', shape=[5, 5, 256, 512])
-DG_bconv4 = tf.get_variable('DG_bconv4', shape=[512])
+        conv3 = tf.layers.conv2d(
+            inputs=conv2,
+            filters=256,
+            kernel_size=[5, 5],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-DG_Wconv5 = tf.get_variable('DG_Wconv5', shape=[5, 5, 512, 512])
-DG_bconv5 = tf.get_variable('DG_bconv5', shape=[512])
+        conv4 = tf.layers.conv2d(
+            inputs=conv3,
+            filters=512,
+            kernel_size=[5, 5],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-DG_Wconv6 = tf.get_variable('DG_Wconv6', shape=[5, 5, 512, 512])
-DG_bconv6 = tf.get_variable('DG_bconv6', shape=[512])
+        conv5 = tf.layers.conv2d(
+            inputs=conv4,
+            filters=512,
+            kernel_size=[5, 5],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-DG_Wdense7 = tf.get_variable('DG_Wdense7', shape=[8192, 1024])
-DG_bdense7 = tf.get_variable('DG_bdense7', shape=[1024])
+        conv6 = tf.layers.conv2d(
+            inputs=conv5,
+            filters=512,
+            kernel_size=[5, 5],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-theta_DG = [DG_Wconv1, DG_bconv1, DG_Wconv2, DG_bconv2, DG_Wconv3, DG_bconv3, DG_Wconv4, DG_bconv4,
-            DG_Wconv5, DG_bconv5, DG_Wconv6, DG_bconv6, DG_Wdense7, DG_bdense7]
+        conv6_flat = tf.layers.flatten(
+            inputs=conv6)
 
-def global_discriminator(x): # Takes BATCH_SIZE x 128 x 128 x 3, outputs BATCH_SIZE x 1024
-    DG_a1 = tf.nn.conv2d(x, DG_Wconv1, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv1
-    DG_h1 = tf.nn.relu(DG_a1) # (None, 128, 128, 64)
+        dense7 = tf.layers.dense(
+            inputs=conv6_flat,
+            units=1024,
+            activation=tf.nn.relu)
 
-    DG_a2 = tf.nn.conv2d(DG_h1, DG_Wconv2, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv2
-    DG_h2 = tf.nn.relu(DG_a2) # (None, 64, 64, 128)
-
-    DG_a3 = tf.nn.conv2d(DG_h2, DG_Wconv3, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv3
-    DG_h3 = tf.nn.relu(DG_a3) # (None, 32, 32, 256)
-
-    DG_a4 = tf.nn.conv2d(DG_h3, DG_Wconv4, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv4
-    DG_h4 = tf.nn.relu(DG_a4) # (None, 16, 16, 512)
-
-    DG_a5 = tf.nn.conv2d(DG_h4, DG_Wconv5, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv5
-    DG_h5 = tf.nn.relu(DG_a5) # (None, 8, 8, 512)
-
-    DG_a6 = tf.nn.conv2d(DG_h5, DG_Wconv6, strides=[1, 2, 2, 1], padding='SAME') + DG_bconv6
-    DG_h6 = tf.nn.relu(DG_a6) # (None, 4, 4, 512)
-
-    DG_h6_flat = tf.reshape(DG_h6, [BATCH_SZ, 8192])
-
-    DG_a7 = tf.matmul(DG_h6_flat, DG_Wdense7) + DG_bdense7
-    DG_h7 = tf.nn.relu(DG_a7) # (None, 1024)
-    return DG_h7
-
-C_Wdense1 = tf.get_variable('C_Wdense1', shape=[1024, 1])
-C_bdense1 = tf.get_variable('C_bdense1', shape=[1])
-
-theta_C = [C_Wdense1, C_bdense1]
+    return dense7
 
 def concatenator(global_x):
-    C_a1 = tf.matmul(global_x, C_Wdense1) + C_bdense1 # logits
-    C_h1 = tf.sigmoid(C_a1) # (None, 1)
-    return C_h1, C_a1
+    with tf.variable_scope('C', reuse=tf.AUTO_REUSE):
+        dense1 = tf.layers.dense(
+            inputs=global_x,
+            units=1,
+            activation=tf.sigmoid)
+
+    return dense1
 
 imgs, imgs_r = load_images(None)
 imgs_p = preprocess_images(imgs)
 
+G_sample = generator(G_Z)
+vars_G = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='G')
+
+C_real = concatenator(global_discriminator(DG_X))
+G_sample_r = tf.image.resize_images(G_sample, [256, 256]) # TODO: Check this isn't sketchy
+C_fake = concatenator(global_discriminator(G_sample_r))
+vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
+vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
+
 with tf.Session() as sess:
     # TODO: Sample batches from training set
-    G_sample = generator(G_Z)
-    C_real, _ = concatenator(global_discriminator(DG_X))
-    G_sample_r = tf.image.resize_images(G_sample, [256, 256]) # TODO: Check this isn't sketchy
-    C_fake, _ = concatenator(global_discriminator(G_sample_r))
-
     C_loss = -tf.reduce_mean(tf.log(C_real) + tf.log(1. - C_fake))
     G_loss = -tf.reduce_mean(tf.log(C_fake))
 
-    C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(theta_DG + theta_C))
-    G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=theta_G)
+    C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C))
+    G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 
     sess.run(tf.global_variables_initializer())
 
