@@ -35,7 +35,7 @@ def generator(z):
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
-            dilation_rate=(2, 2),
+            dilation_rate=(1, 1),
             padding="same",
             activation=tf.nn.relu)
 
@@ -44,7 +44,7 @@ def generator(z):
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
-            dilation_rate=(4, 4),
+            dilation_rate=(1, 1),
             padding="same",
             activation=tf.nn.relu)
 
@@ -122,7 +122,7 @@ def global_discriminator(x):
 
         dense5 = tf.layers.dense(
             inputs=conv4_flat,
-            units=128,
+            units=512,
             activation=tf.nn.relu)
 
     return dense5

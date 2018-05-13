@@ -36,23 +36,46 @@ vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
 vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
 
 C_loss = -tf.reduce_mean(tf.log(C_real) + tf.log(1. - C_fake))
-G_loss = -tf.reduce_mean(tf.log(C_fake))
+G_MSE_loss = tf.losses.mean_squared_error(G_sample, DG_X) # TODO: MULTIPLY with mask
+ALPHA = 0.0004
+G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(C_fake))
 
 C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C))
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
+G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 
-N_EPOCHS = 100
-N_BATCHES = 1 # TODO: make this more than 1
+N_ITERS = 300 # TODO: make this more than 1
+N_ITERS_P1 = 100 # How many iterations to train in phase 1
+N_ITERS_P2 = 100 # How many iterations to train in phase 2
+INTV_PRINT = 10 # How often to print
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
+    for i in range(N_ITERS):
+        # TODO: Sample batches from training set
+        G_sample_ = None
+        C_loss_curr, G_loss_curr, G_MSE_loss_curr = None, None, None
+        if i < N_ITERS_P1: # Stage 1 - Train Generator Only
+            if i == 0:
+                print('------------------> Beginning Phase 1...')
+            _, G_MSE_loss_curr, G_sample_ = sess.run([G_MSE_solver, G_MSE_loss, G_sample], feed_dict={DG_X: imgs, G_Z: imgs_p})
+        elif i < N_ITERS_P1 + N_ITERS_P2: # Stage 2 - Train Discriminator Only
+            if i == N_ITERS_P1:
+                print('------------------> Beginning Phase 2...')
+            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: imgs, G_Z: imgs_p})
+        else: # Stage 3 - Train both Generator and Discriminator
+            if i == N_ITERS_P1 + N_ITERS_P2:
+                print('------------------> Beginning Phase 3...')
+            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: imgs, G_Z: imgs_p})
+            _, G_loss_curr, G_sample_ = sess.run([G_solver, G_loss, G_sample], feed_dict={DG_X: imgs, G_Z: imgs_p})
 
-    for epoch in range(N_EPOCHS):
-        for i in range(N_BATCHES):
-            # TODO: Sample batches from training set
-            _, C_loss_curr, G_sample_ = sess.run([C_solver, C_loss, G_sample], feed_dict={DG_X: imgs, G_Z: imgs_p})
-            _, G_loss_curr = sess.run([G_solver, G_loss], feed_dict={G_Z: imgs_p})
-
-            if epoch % 1 == 0:
-                util.save_image(G_sample_[0], 'output/G%d.png' % epoch) # TODO: Sample images from output
-                print('Epoch [%d/%d]:\n\tC_loss = %f\n\tG_loss = %f' % (epoch, N_EPOCHS, C_loss_curr, G_loss_curr))
+        if i % INTV_PRINT == 0:
+            if G_sample_ is not None:
+                util.save_image(G_sample_[0], 'output/G%d.png' % i) # TODO: Sample images from output
+            print('Iteration [%d/%d]:' % (i, N_ITERS))
+            if G_MSE_loss_curr is not None:
+                print('\tG_MSE_loss = %f' % G_MSE_loss_curr)
+            if G_loss_curr is not None:
+                print('\tG_loss = %f' % G_loss_curr)
+            if C_loss_curr is not None:
+                print('\tC_loss = %f' % C_loss_curr)
