@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
+print('Imported vanilla model.')
+
 def generator(z):
     with tf.variable_scope('G', reuse=tf.AUTO_REUSE):
         conv1 = tf.layers.conv2d(
