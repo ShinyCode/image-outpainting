@@ -49,22 +49,22 @@ def save_image(img_r, name, mode='RGB'):
     img = Image.fromarray(img_norm, mode)
     img.save(name, format='PNG')
 
-def read_in_CIFAR(file_name, class_label=None): # Returns numpy array of size (m, 32, 32, 3)
-    # TODO: See https://www.cs.toronto.edu/~kriz/cifar.html
-    # TODO: Decide if we want to filter by class (in the labels list)
+def upsample_CIFAR(batch): # Rescales (m, CIFAR_SZ, CIFAR_SZ, 3) -> (m, IMAGE_SZ, IMAGE_SZ, 3)
+    return np.array([scipy.misc.imresize(img, (IMAGE_SZ, IMAGE_SZ, 3), interp='cubic') for img in batch])
+
+def read_in_CIFAR(file_name, class_label=None): # Returns numpy array of size (m, IMAGE_SZ, IMAGE_SZ, 3)
+    # NOTE: See https://www.cs.toronto.edu/~kriz/cifar.html
     import pickle
     with open(file_name, 'rb') as fo:
         data = pickle.load(fo, encoding='bytes')
         raw_images = data[b'data']
         classes = np.array(data[b'labels'])
-        class_images = raw_images[classes == class_label]
-        class_images_np = np.array(class_images)
-        class_images_resized = np.transpose(np.reshape(class_images_np,(-1, 3, 32,32)), (0, 2, 3, 1))
-        class_images_resized = np.reshape(class_images_np, (-1, 3, CIFAR_SZ, CIFAR_SZ))
-    return class_images_resized
-
-def upsample_CIFAR(batch): # Rescales (m, 32, 32, 3) -> (m, 64, 64, 3)
-    return np.array([scipy.misc.imresize(img, (3, IMAGE_SZ, IMAGE_SZ), interp='cubic') for img in batch])
+    if raw_images is not None:
+        raw_images = raw_images[classes == class_label]
+    class_images_np = np.array(raw_images)
+    class_images_resized = np.transpose(np.reshape(class_images_np, (-1, 3, CIFAR_SZ, CIFAR_SZ)), (0, 2, 3, 1))
+    class_images_upsampled = upsample_CIFAR(class_images_resized) # Upsample when loading data to save time during training
+    return class_images_upsampled
 
 def sample_random_minibatch(data, m): # Returns numpy array of size (m, 64, 64, 3)
     indices = np.random.randint(0, data.shape[0], m)
