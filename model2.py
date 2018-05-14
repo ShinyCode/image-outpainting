@@ -35,7 +35,7 @@ def generator(z):
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
-            dilation_rate=(1, 1),
+            dilation_rate=(2, 2),
             padding="same",
             activation=tf.nn.relu)
 
@@ -44,7 +44,7 @@ def generator(z):
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
-            dilation_rate=(1, 1),
+            dilation_rate=(4, 4),
             padding="same",
             activation=tf.nn.relu)
 
