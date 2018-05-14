@@ -1,6 +1,7 @@
-import tensorflow as tf
+# import tensorflow as tf
 import numpy as np
 from PIL import Image
+import scipy.misc
 
 IMAGE_SZ = 64 # A power of 2, please!
 
@@ -47,13 +48,22 @@ def save_image(img_r, name, mode='RGB'):
     img = Image.fromarray(img_norm, mode)
     img.save(name, format='PNG')
 
-def read_in_CIFAR(dir): # Returns numpy array of size (m, 32, 32, 3)
+def read_in_CIFAR(file_name, class_label=None): # Returns numpy array of size (m, 32, 32, 3)
     # TODO: See https://www.cs.toronto.edu/~kriz/cifar.html
     # TODO: Decide if we want to filter by class (in the labels list)
-    pass
+    import pickle
+    with open(file_name, 'rb') as fo:
+        data = pickle.load(fo, encoding='bytes')
+        raw_images = data[b'data']
+        classes = np.array(data[b'labels'])
+        class_images = raw_images[classes == class_label]
+        class_images_np = np.array(class_images)
+        class_images_resized = np.reshape(class_images_np, (-1, 32, 32, 3))
+    return class_images_resized
 
 def upsample_CIFAR(batch): # Rescales (m, 32, 32, 3) -> (m, 64, 64, 3)
-    pass
+    return np.array([scipy.misc.imresize(img, (64, 64, 3), interp='cubic') for img in batch])
 
 def sample_random_minibatch(data, m): # Returns numpy array of size (m, 64, 64, 3)
-    pass
+    indices = np.random.randint(0, data.shape[0], m)
+    return data[indices]
