@@ -46,3 +46,14 @@ def save_image(img_r, name, mode='RGB'):
     img_norm = norm_image(img_r)
     img = Image.fromarray(img_norm, mode)
     img.save(name, format='PNG')
+
+def read_in_CIFAR(dir): # Returns numpy array of size (m, 32, 32, 3)
+    # TODO: See https://www.cs.toronto.edu/~kriz/cifar.html
+    # TODO: Decide if we want to filter by class (in the labels list)
+    pass
+
+def upsample_CIFAR(batch): # Rescales (m, 32, 32, 3) -> (m, 64, 64, 3)
+    pass
+
+def sample_random_minibatch(data, m): # Returns numpy array of size (m, 64, 64, 3)
+    pass
