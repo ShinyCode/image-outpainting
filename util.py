@@ -1,4 +1,4 @@
-import tensorflow as tf
+# import tensorflow as tf
 import numpy as np
 from PIL import Image
 import scipy.misc
@@ -59,11 +59,12 @@ def read_in_CIFAR(file_name, class_label=None): # Returns numpy array of size (m
         classes = np.array(data[b'labels'])
         class_images = raw_images[classes == class_label]
         class_images_np = np.array(class_images)
-        class_images_resized = np.reshape(class_images_np, (-1, CIFAR_SZ, CIFAR_SZ, 3))
+        class_images_resized = np.transpose(np.reshape(class_images_np,(-1, 3, 32,32)), (0, 2, 3, 1))
+        class_images_resized = np.reshape(class_images_np, (-1, 3, CIFAR_SZ, CIFAR_SZ))
     return class_images_resized
 
 def upsample_CIFAR(batch): # Rescales (m, 32, 32, 3) -> (m, 64, 64, 3)
-    return np.array([scipy.misc.imresize(img, (IMAGE_SZ, IMAGE_SZ, 3), interp='cubic') for img in batch])
+    return np.array([scipy.misc.imresize(img, (3, IMAGE_SZ, IMAGE_SZ), interp='cubic') for img in batch])
 
 def sample_random_minibatch(data, m): # Returns numpy array of size (m, 64, 64, 3)
     indices = np.random.randint(0, data.shape[0], m)
