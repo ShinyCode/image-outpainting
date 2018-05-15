@@ -18,15 +18,14 @@ def load_images(dir): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
     return pix[np.newaxis] / 255.0 # TODO: CHECK THIS
 
 def preprocess_images(imgs): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
-    # TODO: Randomize it, and decide how we're doing the mean
+    m = imgs.shape[0]
     imgs = np.array(imgs, copy=True) # Don't want to overwrite
-    pix_avg = np.mean(imgs)
-    img = imgs[0] # TODO: Vectorize for entire thingy eventually
-    img[int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = pix_avg
-    mask = np.zeros((IMAGE_SZ, IMAGE_SZ, 1))
-    mask[int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = 1.0
-    imgs_p = np.concatenate((img, mask), axis=2)
-    return imgs_p[np.newaxis]
+    pix_avg = np.mean(imgs, axis=(1, 2, 3))
+    imgs[:, int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = pix_avg
+    mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
+    mask[:, int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = 1.0
+    imgs_p = np.concatenate((imgs, mask), axis=3)
+    return imgs_p
 
 def generate_rand_img(batch_size, w, h, nc): # width, height, number of channels, TODO: make the mask actually a binary thing
     # return tf.random_uniform([batch_size, w, h, nc], minval=0, maxval=256, dtype=tf.float32)
