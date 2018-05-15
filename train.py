@@ -9,14 +9,17 @@ Input to the network is RGB image with binary channel indicating image completio
 Padding VALID: filter fits entirely, Padding SAME: preserves shape
 '''
 
-BATCH_SZ = 1
+BATCH_SZ = 10
 
 # Generator code
-G_Z = tf.placeholder(tf.float32, shape=[BATCH_SZ, 64, 64, 4], name='G_Z')
-DG_X = tf.placeholder(tf.float32, shape=[BATCH_SZ, 64, 64, 3], name='DG_X')
+G_Z = tf.placeholder(tf.float32, shape=[None, 64, 64, 4], name='G_Z')
+DG_X = tf.placeholder(tf.float32, shape=[None, 64, 64, 3], name='DG_X')
 
-imgs = util.load_images(None)
+imgs = util.read_in_CIFAR('data/data_batch_1')
 imgs_p = util.preprocess_images(imgs)
+
+test_img = util.load_test_image()
+test_img_p = util.preprocess_images(test_img)
 
 # FOR DEBUGGING:
 '''
@@ -55,25 +58,27 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     for i in range(N_ITERS):
         # TODO: Sample batches from training set
+        batch, batch_p = util.sample_random_minibatch(imgs, imgs_p, BATCH_SZ)
         G_sample_ = None
         C_loss_curr, G_loss_curr, G_MSE_loss_curr = None, None, None
         if i < N_ITERS_P1: # Stage 1 - Train Generator Only
             if i == 0:
                 print('------------------> Beginning Phase 1...')
-            _, G_MSE_loss_curr, G_sample_ = sess.run([G_MSE_solver, G_MSE_loss, G_sample], feed_dict={DG_X: imgs, G_Z: imgs_p})
+            _, G_MSE_loss_curr, G_sample_ = sess.run([G_MSE_solver, G_MSE_loss, G_sample], feed_dict={DG_X: batch, G_Z: batch_p})
         elif i < N_ITERS_P1 + N_ITERS_P2: # Stage 2 - Train Discriminator Only
             if i == N_ITERS_P1:
                 print('------------------> Beginning Phase 2...')
-            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: imgs, G_Z: imgs_p})
+            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: batch, G_Z: batch_p})
         else: # Stage 3 - Train both Generator and Discriminator
             if i == N_ITERS_P1 + N_ITERS_P2:
                 print('------------------> Beginning Phase 3...')
-            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: imgs, G_Z: imgs_p})
-            _, G_loss_curr, G_sample_ = sess.run([G_solver, G_loss, G_sample], feed_dict={DG_X: imgs, G_Z: imgs_p})
+            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: batch, G_Z: batch_p})
+            _, G_loss_curr, G_sample_ = sess.run([G_solver, G_loss, G_sample], feed_dict={DG_X: batch, G_Z: batch_p})
 
         if i % INTV_PRINT == 0:
             if G_sample_ is not None:
-                util.save_image(G_sample_[0], 'output/G%d.png' % i) # TODO: Sample images from output
+                output, = sess.run([G_sample], feed_dict={DG_X: test_img, G_Z: test_img_p})
+                util.save_image(output[0], 'output/G%d.png' % i)
             print('Iteration [%d/%d]:' % (i, N_ITERS))
             if G_MSE_loss_curr is not None:
                 print('\tG_MSE_loss = %f' % G_MSE_loss_curr)
