@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-scp -i "cs_230_key.pem" ubuntu@34.237.120.117:~/image-outpainting/output/* $1
+scp -r -i "cs_230_key.pem" ubuntu@34.237.120.117:~/image-outpainting/output $1
