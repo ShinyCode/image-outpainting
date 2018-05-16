@@ -15,7 +15,7 @@ BATCH_SZ = 64
 G_Z = tf.placeholder(tf.float32, shape=[None, 64, 64, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, 64, 64, 3], name='DG_X')
 
-imgs = util.read_in_CIFAR('data/data_batch_1')
+imgs = util.read_in_CIFAR('data/data_batch_1', class_label=1)
 imgs_p = util.preprocess_images(imgs)
 
 test_img = imgs[0, np.newaxis]
