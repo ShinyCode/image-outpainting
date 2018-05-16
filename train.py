@@ -9,7 +9,7 @@ Input to the network is RGB image with binary channel indicating image completio
 Padding VALID: filter fits entirely, Padding SAME: preserves shape
 '''
 
-BATCH_SZ = 64
+BATCH_SZ = 32
 
 # Generator code
 G_Z = tf.placeholder(tf.float32, shape=[None, 64, 64, 4], name='G_Z')
@@ -44,17 +44,17 @@ vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
 vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
 
 # http://www.cvc.uab.es/people/joans/slides_tensorflow/tensorflow_html/gan.html
-C_loss = -tf.reduce_mean(tf.log(1e-10 + C_real) + tf.log(1. - C_fake))
+C_loss = -tf.reduce_mean(tf.log(1e-9 + C_real) + tf.log(1e-9 + 1. - C_fake))
 G_MSE_loss = tf.losses.mean_squared_error(G_sample, DG_X, weights=tf.expand_dims(G_Z[:,:,:,3], -1)) # TODO: MULTIPLY with mask. Actually see if we want to remove this.
 ALPHA = 0.0004
-G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(1e-10 + C_fake))
+G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(1e-9 + C_fake))
 
 C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C))
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 
-N_ITERS = 10000
-N_ITERS_P1 = 3600 # How many iterations to train in phase 1
+N_ITERS = 5000
+N_ITERS_P1 = 1000 # How many iterations to train in phase 1
 N_ITERS_P2 = 400 # How many iterations to train in phase 2
 INTV_PRINT = 20 # How often to print
 
