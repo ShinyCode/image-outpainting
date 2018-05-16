@@ -43,10 +43,11 @@ C_fake = model.concatenator(model.global_discriminator(G_sample))
 vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
 vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
 
-C_loss = -tf.reduce_mean(tf.log(C_real) + tf.log(1. - C_fake))
+# http://www.cvc.uab.es/people/joans/slides_tensorflow/tensorflow_html/gan.html
+C_loss = -tf.reduce_mean(tf.log(1e-10 + C_real) + tf.log(1. - C_fake))
 G_MSE_loss = tf.losses.mean_squared_error(G_sample, DG_X, weights=tf.expand_dims(G_Z[:,:,:,3], -1)) # TODO: MULTIPLY with mask. Actually see if we want to remove this.
 ALPHA = 0.0004
-G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(C_fake))
+G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(1e-10 + C_fake))
 
 C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C))
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
