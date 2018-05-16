@@ -18,8 +18,13 @@ DG_X = tf.placeholder(tf.float32, shape=[None, 64, 64, 3], name='DG_X')
 imgs = util.read_in_CIFAR('data/data_batch_1')
 imgs_p = util.preprocess_images(imgs)
 
-test_img = util.load_test_image()
-test_img_p = util.preprocess_images(test_img)
+test_img = imgs[0, np.newaxis]
+test_img_p = imgs_p[0, np.newaxis]
+util.save_image(test_img[0], 'output/test_img.png')
+
+
+imgs = imgs[1:]
+imgs_p = imgs_p[1:]
 
 # FOR DEBUGGING:
 '''
