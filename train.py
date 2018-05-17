@@ -22,7 +22,6 @@ test_img = imgs[0, np.newaxis]
 test_img_p = imgs_p[0, np.newaxis]
 util.save_image(test_img[0], 'output/test_img.png')
 
-
 imgs = imgs[1:]
 imgs_p = imgs_p[1:]
 
@@ -58,6 +57,9 @@ N_ITERS_P1 = 1000 # How many iterations to train in phase 1
 N_ITERS_P2 = 400 # How many iterations to train in phase 2
 INTV_PRINT = 20 # How often to print
 
+train_MSE_loss = []
+dev_MSE_loss = []
+
 assert N_ITERS > N_ITERS_P1 + N_ITERS_P2
 
 with tf.Session() as sess:
@@ -79,16 +81,28 @@ with tf.Session() as sess:
             if i == N_ITERS_P1 + N_ITERS_P2:
                 print('------------------> Beginning Phase 3...')
             _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: batch, G_Z: batch_p})
-            _, G_loss_curr, G_sample_ = sess.run([G_solver, G_loss, G_sample], feed_dict={DG_X: batch, G_Z: batch_p})
+            _, G_loss_curr, G_MSE_loss_curr, G_sample_ = sess.run([G_solver, G_loss, G_MSE_loss, G_sample], feed_dict={DG_X: batch, G_Z: batch_p})
 
         if i % INTV_PRINT == 0:
+            G_MSE_loss_curr_dev = None
             if G_sample_ is not None:
-                output, = sess.run([G_sample], feed_dict={DG_X: test_img, G_Z: test_img_p})
+                output, G_MSE_loss_curr_dev = sess.run([G_sample, G_MSE_loss], feed_dict={DG_X: test_img, G_Z: test_img_p})
                 util.save_image(output[0], 'output/G%d.png' % i)
             print('Iteration [%d/%d]:' % (i, N_ITERS))
             if G_MSE_loss_curr is not None:
-                print('\tG_MSE_loss = %f' % G_MSE_loss_curr)
+                print('\tG_MSE_loss (train) = %f' % G_MSE_loss_curr)
+            if G_MSE_loss_curr_dev is not None:
+                print('\tG_MSE_loss (dev) = %f' % G_MSE_loss_curr_dev)
             if G_loss_curr is not None:
                 print('\tG_loss = %f' % G_loss_curr)
             if C_loss_curr is not None:
                 print('\tC_loss = %f' % C_loss_curr)
+
+        # Keep track of losses for logging
+        if G_MSE_loss_curr is not None:
+            train_MSE_loss.append([i, G_MSE_loss_curr])
+        if G_MSE_loss_curr_dev is not None:
+            dev_MSE_loss.append([i, G_MSE_loss_curr_dev])
+
+# Save the loss
+np.savez('output/loss.npz', train_MSE_loss=np.array(train_MSE_loss), dev_MSE_loss=np.array(dev_MSE_loss))
