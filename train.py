@@ -10,6 +10,7 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 '''
 
 BATCH_SZ = 32
+VERBOSE = False
 
 # Generator code
 G_Z = tf.placeholder(tf.float32, shape=[None, 64, 64, 4], name='G_Z')
@@ -76,13 +77,20 @@ with tf.Session() as sess:
         elif i < N_ITERS_P1 + N_ITERS_P2: # Stage 2 - Train Discriminator Only
             if i == N_ITERS_P1:
                 print('------------------> Beginning Phase 2...')
-            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: batch, G_Z: batch_p})
+            _, C_loss_curr, C_real_, C_fake_ = sess.run([C_solver, C_loss, C_real, C_fake], feed_dict={DG_X: batch, G_Z: batch_p})
+            if VERBOSE:
+                print((i, C_loss_curr, np.min(C_real_), np.max(C_real_), np.min(C_fake_), np.max(C_fake_)))
         else: # Stage 3 - Train both Generator and Discriminator
             if i == N_ITERS_P1 + N_ITERS_P2:
                 print('------------------> Beginning Phase 3...')
-            _, C_loss_curr = sess.run([C_solver, C_loss], feed_dict={DG_X: batch, G_Z: batch_p})
-            _, G_loss_curr, G_MSE_loss_curr, G_sample_ = sess.run([G_solver, G_loss, G_MSE_loss, G_sample], feed_dict={DG_X: batch, G_Z: batch_p})
-
+            _, C_loss_curr, C_real_, C_fake_ = sess.run([C_solver, C_loss, C_real, C_fake], feed_dict={DG_X: batch, G_Z: batch_p})
+            if VERBOSE:
+                print((i, C_loss_curr, 'D', np.min(C_real_), np.max(C_real_), np.min(C_fake_), np.max(C_fake_)))
+            _, G_loss_curr, G_MSE_loss_curr, G_sample_, C_fake_ = sess.run([G_solver, G_loss, G_MSE_loss, G_sample, C_fake], feed_dict={DG_X: batch, G_Z: batch_p})
+            if VERBOSE:
+                print((i, G_loss_curr, 'G', np.min(C_fake_), np.max(C_fake_)))
+        
+            
         if i % INTV_PRINT == 0:
             G_MSE_loss_curr_dev = None
             if G_sample_ is not None:

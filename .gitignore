@@ -6,3 +6,4 @@ data
 output*
 *.pem
 loss_out
+crash*
