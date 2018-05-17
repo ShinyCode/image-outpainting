@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import scipy.misc
+import matplotlib.pyplot as plt
 
 IMAGE_SZ = 64 # A power of 2, please!
 CIFAR_SZ = 32
@@ -68,3 +69,17 @@ def read_in_CIFAR(file_name, class_label=None): # Returns numpy array of size (m
 def sample_random_minibatch(data, data_p, m): # Returns two numpy arrays of size (m, 64, 64, 3)
     indices = np.random.randint(0, data.shape[0], m)
     return data[indices], data_p[indices]
+
+def plot_loss(loss_filename, title, out_filename):
+    loss = np.load(loss_filename)
+    assert 'train_MSE_loss' in loss and 'dev_MSE_loss' in loss
+    train_MSE_loss = loss['train_MSE_loss']
+    dev_MSE_loss = loss['dev_MSE_loss'] # TODO: Deal with dev_MSE_loss not changing during Phase 2
+    label_train, = plt.plot(train_MSE_loss[:, 0], train_MSE_loss[:, 1], label='Training MSE loss')
+    label_dev, = plt.plot(dev_MSE_loss[:, 0], dev_MSE_loss[:, 1], label='Dev MSE loss')
+    plt.legend(handles=[label_train, label_dev])
+    plt.xlabel('Iteration')
+    plt.ylabel('MSE Loss')
+    plt.title(title)
+    plt.savefig(out_filename)
+    plt.clf()
