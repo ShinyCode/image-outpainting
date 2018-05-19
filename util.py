@@ -17,7 +17,7 @@ def load_test_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
     assert pix.shape == (IMAGE_SZ, IMAGE_SZ, 3)
     return pix[np.newaxis] / 255.0 # Need to normalize images to [0, 1]
 
-def preprocess_images(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
+def preprocess_images_inpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
     m = imgs.shape[0]
     imgs = np.array(imgs, copy=True) # Don't want to overwrite
     pix_avg = np.mean(imgs, axis=(1, 2, 3))
@@ -25,6 +25,18 @@ def preprocess_images(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
         imgs[:, int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = pix_avg[:, np.newaxis, np.newaxis, np.newaxis]
     mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
     mask[:, int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = 1.0
+    imgs_p = np.concatenate((imgs, mask), axis=3)
+    return imgs_p
+
+def preprocess_images_outpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
+    m = imgs.shape[0]
+    imgs = np.array(imgs, copy=True) # Don't want to overwrite
+    pix_avg = np.mean(imgs, axis=(1, 2, 3))
+    if crop:
+        imgs[:, :, :int(2 * IMAGE_SZ / 8), :] = imgs[:, :, int(-2 * IMAGE_SZ / 8):, :] = pix_avg[:, np.newaxis, np.newaxis, np.newaxis]
+
+    mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
+    mask[:, :, :int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8):, :] = 1.0
     imgs_p = np.concatenate((imgs, mask), axis=3)
     return imgs_p
 
