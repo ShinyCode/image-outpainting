@@ -9,8 +9,12 @@ Input to the network is RGB image with binary channel indicating image completio
 Padding VALID: filter fits entirely, Padding SAME: preserves shape
 '''
 
+# np.random.seed(0)
+# tf.set_random_seed(0)
+
 BATCH_SZ = 32
-VERBOSE = False
+VERBOSE = True
+EPSILON = 1e-9
 
 # Generator code
 G_Z = tf.placeholder(tf.float32, shape=[None, 64, 64, 4], name='G_Z')
@@ -44,10 +48,10 @@ vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
 vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
 
 # http://www.cvc.uab.es/people/joans/slides_tensorflow/tensorflow_html/gan.html
-C_loss = -tf.reduce_mean(tf.log(1e-9 + C_real) + tf.log(1e-9 + 1. - C_fake))
+C_loss = -tf.reduce_mean(tf.log(tf.maximum(C_real, EPSILON)) + tf.log(tf.maximum(1. - C_fake, EPSILON)))
 G_MSE_loss = tf.losses.mean_squared_error(G_sample, DG_X, weights=tf.expand_dims(G_Z[:,:,:,3], -1)) # TODO: MULTIPLY with mask. Actually see if we want to remove this.
 ALPHA = 0.0004
-G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(1e-9 + C_fake))
+G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(tf.maximum(C_fake, EPSILON)))
 
 C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C))
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
