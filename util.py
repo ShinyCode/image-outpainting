@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 import scipy.misc
 import matplotlib.pyplot as plt
+import cv2
 
 IMAGE_SZ = 64 # A power of 2, please!
 CIFAR_SZ = 32
@@ -95,3 +96,11 @@ def plot_loss(loss_filename, title, out_filename):
     plt.title(title)
     plt.savefig(out_filename)
     plt.clf()
+
+def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH): # img, img_0 are (64, 64, 3), mask is (64, 64, 1)
+    src = cv2.imread(img_PATH)[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :]
+    dst = cv2.imread(img_o_PATH)
+    mask = np.ones(src.shape, src.dtype) * 255
+    center = (int(IMAGE_SZ / 2) - 1, int(IMAGE_SZ / 2) - 1)
+    out = cv2.seamlessClone(src, dst, mask, center, cv2.NORMAL_CLONE)
+    cv2.imwrite(out_PATH, out)
