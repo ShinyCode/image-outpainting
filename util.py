@@ -39,9 +39,9 @@ def preprocess_images_outpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAG
     mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
     mask[:, :, :int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8):, :] = 1.0
     mask[:, :, int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8), :] = 1.0
-    mask[:, :, int(2 * IMAGE_SZ / 8) + 1, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 1, :] = 0.8
-    mask[:, :, int(2 * IMAGE_SZ / 8) + 2, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 2, :] = 0.5
-    mask[:, :, int(2 * IMAGE_SZ / 8) + 3, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 3, :] = 0.1
+    mask[:, :, int(2 * IMAGE_SZ / 8) + 1, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 1, :] = 2.0
+    mask[:, :, int(2 * IMAGE_SZ / 8) + 2, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 2, :] = 3.0
+    mask[:, :, int(2 * IMAGE_SZ / 8) + 3, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 3, :] = 3.0
     imgs_p = np.concatenate((imgs, mask), axis=3)
     return imgs_p
 
@@ -101,10 +101,14 @@ def plot_loss(loss_filename, title, out_filename):
     plt.savefig(out_filename)
     plt.clf()
 
-def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH): # img, img_0 are (64, 64, 3), mask is (64, 64, 1)
+def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH, blend=False): # img, img_0 are (64, 64, 3), mask is (64, 64, 1)
     src = cv2.imread(img_PATH)[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :]
     dst = cv2.imread(img_o_PATH)
-    mask = np.ones(src.shape, src.dtype) * 255
-    center = (int(IMAGE_SZ / 2) - 1, int(IMAGE_SZ / 2) - 1)
-    out = cv2.seamlessClone(src, dst, mask, center, cv2.NORMAL_CLONE)
+    if blend:
+        mask = np.ones(src.shape, src.dtype) * 255
+        center = (int(IMAGE_SZ / 2) - 1, int(IMAGE_SZ / 2) - 1)
+        out = cv2.seamlessClone(src, dst, mask, center, cv2.NORMAL_CLONE)
+    else:
+        out = dst.copy()
+        out[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :] = src
     cv2.imwrite(out_PATH, out)
