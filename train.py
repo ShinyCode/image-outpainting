@@ -57,8 +57,8 @@ C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C)
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 
-N_ITERS = 5000
-N_ITERS_P1 = 1000 # How many iterations to train in phase 1
+N_ITERS = 20000
+N_ITERS_P1 = 3600 # How many iterations to train in phase 1
 N_ITERS_P2 = 400 # How many iterations to train in phase 2
 INTV_PRINT = 20 # How often to print
 
