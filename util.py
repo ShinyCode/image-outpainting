@@ -39,9 +39,9 @@ def preprocess_images_outpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAG
     mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
     mask[:, :, :int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8):, :] = 1.0
     mask[:, :, int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8), :] = 1.0
-    mask[:, :, int(2 * IMAGE_SZ / 8) + 1, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 1, :] = 2.0
-    mask[:, :, int(2 * IMAGE_SZ / 8) + 2, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 2, :] = 3.0
-    mask[:, :, int(2 * IMAGE_SZ / 8) + 3, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 3, :] = 3.0
+    mask[:, :, int(2 * IMAGE_SZ / 8) + 1, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 1, :] = 0.8
+    mask[:, :, int(2 * IMAGE_SZ / 8) + 2, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 2, :] = 0.5
+    mask[:, :, int(2 * IMAGE_SZ / 8) + 3, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 3, :] = 0.2
     imgs_p = np.concatenate((imgs, mask), axis=3)
     return imgs_p
 

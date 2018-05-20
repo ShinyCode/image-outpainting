@@ -20,7 +20,12 @@ EPSILON = 1e-9
 G_Z = tf.placeholder(tf.float32, shape=[None, 64, 64, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, 64, 64, 3], name='DG_X')
 
-imgs = util.read_in_CIFAR('data/data_batch_1', class_label=1)
+imgs1 = util.read_in_CIFAR('data/data_batch_1', class_label=1)
+imgs2 = util.read_in_CIFAR('data/data_batch_2', class_label=1)
+imgs3 = util.read_in_CIFAR('data/data_batch_3', class_label=1)
+imgs4 = util.read_in_CIFAR('data/data_batch_4', class_label=1)
+imgs5 = util.read_in_CIFAR('data/data_batch_5', class_label=1)
+imgs = np.concatenate((imgs1, imgs2, imgs3, imgs4, imgs5), axis=0)
 imgs_p = util.preprocess_images_outpainting(imgs)
 
 test_img = imgs[0, np.newaxis]
@@ -57,8 +62,8 @@ C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C)
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 
-N_ITERS = 20000
-N_ITERS_P1 = 3600 # How many iterations to train in phase 1
+N_ITERS = 5000
+N_ITERS_P1 = 1000 # How many iterations to train in phase 1
 N_ITERS_P2 = 400 # How many iterations to train in phase 2
 INTV_PRINT = 20 # How often to print
 
