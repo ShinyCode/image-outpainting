@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import cv2
 import wget
 import os
+from urllib.error import HTTPError
+from urllib.error import URLError
 
 IMAGE_SZ = 64 # A power of 2, please!
 CIFAR_SZ = 32
@@ -121,14 +123,22 @@ def download_images(url_list_PATH, out_PATH, prefix):
             url = line.strip()
             _, ext = os.path.splitext(url)
             dst = os.path.abspath(os.path.join(out_PATH, prefix + str(i) + ext))
-            filename = wget.download(url, dst)
+            try:
+                filename = wget.download(url, dst)
+            except:
+                continue
             print('Downloaded %s' % filename)
 
 def delete_blank_images(url_PATH, ref_img_PATH):
     ref_img = Image.open(os.path.abspath(ref_img_PATH)).convert('RGB')
     ref_img_array = np.array(ref_img)
     for filename in os.listdir(url_PATH):
-        img = Image.open(os.path.join(os.path.abspath(url_PATH), filename)).convert('RGB')
+        try:
+            img = Image.open(os.path.join(os.path.abspath(url_PATH), filename)).convert('RGB')
+        except:
+            print('Invalid file: Deleting %s' % filename)
+            os.remove(os.path.join(os.path.abspath(url_PATH), filename))
+            continue
         img_array = np.array(img)
         if img_array.shape == ref_img_array.shape and np.sum(img_array) == np.sum(ref_img_array):
             print('Deleting %s' % filename)
