@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import model2 as model
+import model3 as model
 import util
 
 '''

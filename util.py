@@ -24,13 +24,17 @@ def load_test_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
 
 def load_images(in_PATH):
     imgs = []
-    for filename in os.listdir(in_PATH):
+    for filename in sorted(os.listdir(in_PATH)):
         full_filename = os.path.join(os.path.abspath(in_PATH), filename)
         img = Image.open(full_filename).convert('RGB')
         pix = np.array(img)
         pix_norm = pix / 255.0
         imgs.append(pix_norm)
     return np.array(imgs)
+
+def compile_images(in_PATH, out_PATH):
+    imgs = load_images(in_PATH)
+    np.save(out_PATH, imgs)
 
 def preprocess_images_inpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
     m = imgs.shape[0]
