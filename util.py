@@ -11,9 +11,9 @@ from urllib.error import URLError
 IMAGE_SZ = 128 # A power of 2, please!
 CIFAR_SZ = 32
 
-def load_test_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
+def load_city_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
     # TODO: change so it iterates over all images
-    im = Image.open('images/city_64.png').convert('RGB')
+    im = Image.open('images/city_128.png').convert('RGB')
     width, height = im.size
     left = (width - IMAGE_SZ) / 2
     top = (height - IMAGE_SZ) / 2

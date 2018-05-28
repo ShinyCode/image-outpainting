@@ -13,7 +13,7 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # np.random.seed(0)
 # tf.set_random_seed(0)
 
-BATCH_SZ = 16
+BATCH_SZ = 1
 VERBOSE = True
 EPSILON = 1e-9
 IMAGE_SZ = 128
@@ -30,15 +30,26 @@ if not os.path.isdir(OUT_DIR):
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
+'''
 imgs = np.load('places/places_128_small.npy') # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
 imgs_p = util.preprocess_images_outpainting(imgs)
 
 test_img = imgs[0, np.newaxis]
 test_img_p = imgs_p[0, np.newaxis]
+'''
+
+imgs = util.load_city_image()
+imgs_p = util.preprocess_images_outpainting(imgs)
+
+test_img = imgs.copy()
+test_img_p = imgs_p.copy()
+
 util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img.png'))
 
+'''
 imgs = imgs[1:]
 imgs_p = imgs_p[1:]
+'''
 
 # FOR DEBUGGING:
 '''
