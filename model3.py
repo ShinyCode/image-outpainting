@@ -48,8 +48,17 @@ def generator(z):
             padding="same",
             activation=tf.nn.relu)
 
-        conv6 = tf.layers.conv2d(
+        conv5_p = tf.layers.conv2d(
             inputs=conv5,
+            filters=256,
+            kernel_size=[3, 3],
+            strides=(1, 1),
+            dilation_rate=(8, 8),
+            padding="same",
+            activation=tf.nn.relu)
+
+        conv6 = tf.layers.conv2d(
+            inputs=conv5_p,
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
