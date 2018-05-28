@@ -66,6 +66,8 @@ INTV_PRINT = 20 # How often to print
 train_MSE_loss = []
 dev_MSE_loss = []
 
+last_output_PATH = None
+
 assert N_ITERS > N_ITERS_P1 + N_ITERS_P2
 
 with tf.Session() as sess:
@@ -101,6 +103,7 @@ with tf.Session() as sess:
             if G_sample_ is not None:
                 output, G_MSE_loss_curr_dev = sess.run([G_sample, G_MSE_loss], feed_dict={DG_X: test_img, G_Z: test_img_p})
                 util.save_image(output[0], 'output/G%d.png' % i)
+                last_output_PATH = 'output/G%d.png' % i
             print('Iteration [%d/%d]:' % (i, N_ITERS))
             if G_MSE_loss_curr is not None:
                 print('\tG_MSE_loss (train) = %f' % G_MSE_loss_curr)
@@ -119,3 +122,7 @@ with tf.Session() as sess:
 
 # Save the loss
 np.savez('output/loss.npz', train_MSE_loss=np.array(train_MSE_loss), dev_MSE_loss=np.array(dev_MSE_loss))
+# Save the final blended output, and make a graph of the loss.
+util.plot_loss('output/loss.npz', 'MSE Loss During Training', 'output/loss_plot.png')
+util.postprocess_images_outpainting('output/test_img.png', last_output_PATH, 'output/out_paste.png', blend=False)
+util.postprocess_images_outpainting('output/test_img.png', last_output_PATH, 'output/out_blend.png', blend=True)
