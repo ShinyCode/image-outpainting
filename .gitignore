@@ -3,8 +3,10 @@ __pycache__
 mask.png
 masked.png
 data
+data2
 output*
 *.pem
 loss_out
 crash*
 *~
+places
