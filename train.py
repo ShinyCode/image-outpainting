@@ -15,17 +15,13 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 BATCH_SZ = 32
 VERBOSE = True
 EPSILON = 1e-9
+IMAGE_SZ = 128
 
 # Generator code
-G_Z = tf.placeholder(tf.float32, shape=[None, 64, 64, 4], name='G_Z')
-DG_X = tf.placeholder(tf.float32, shape=[None, 64, 64, 3], name='DG_X')
+G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
+DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
-imgs1 = util.read_in_CIFAR('data/data_batch_1', class_label=1)
-imgs2 = util.read_in_CIFAR('data/data_batch_2', class_label=1)
-imgs3 = util.read_in_CIFAR('data/data_batch_3', class_label=1)
-imgs4 = util.read_in_CIFAR('data/data_batch_4', class_label=1)
-imgs5 = util.read_in_CIFAR('data/data_batch_5', class_label=1)
-imgs = np.concatenate((imgs1, imgs2, imgs3, imgs4, imgs5), axis=0)
+imgs = util.load_test_images('imagenet_plants')
 imgs_p = util.preprocess_images_outpainting(imgs)
 
 test_img = imgs[0, np.newaxis]
@@ -98,8 +94,8 @@ with tf.Session() as sess:
             _, G_loss_curr, G_MSE_loss_curr, G_sample_, C_fake_ = sess.run([G_solver, G_loss, G_MSE_loss, G_sample, C_fake], feed_dict={DG_X: batch, G_Z: batch_p})
             if VERBOSE:
                 print((i, G_loss_curr, 'G', np.min(C_fake_), np.max(C_fake_)))
-        
-            
+
+
         if i % INTV_PRINT == 0:
             G_MSE_loss_curr_dev = None
             if G_sample_ is not None:

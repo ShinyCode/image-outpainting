@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-print('Imported model2 (for CIFAR, 64x64 images)')
+print('Imported model3 (for ImageNet, 128x128 images)')
 
 def generator(z):
     with tf.variable_scope('G', reuse=tf.AUTO_REUSE):
@@ -117,15 +117,23 @@ def global_discriminator(x):
             padding="same",
             activation=tf.nn.relu)
 
-        conv4_flat = tf.layers.flatten(
-            inputs=conv4)
+        conv5 = tf.layers.conv2d(
+            inputs=conv4,
+            filters=64,
+            kernel_size=[5, 5],
+            strides=(2, 2),
+            padding="same",
+            activation=tf.nn.relu)
 
-        dense5 = tf.layers.dense(
-            inputs=conv4_flat,
+        conv5_flat = tf.layers.flatten(
+            inputs=conv5)
+
+        dense6 = tf.layers.dense(
+            inputs=conv5_flat,
             units=512,
             activation=tf.nn.relu)
 
-    return dense5
+    return dense6
 
 def concatenator(global_x):
     with tf.variable_scope('C', reuse=tf.AUTO_REUSE):

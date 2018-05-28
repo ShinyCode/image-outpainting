@@ -6,7 +6,7 @@ import cv2
 import wget
 import os
 
-IMAGE_SZ = 64 # A power of 2, please!
+IMAGE_SZ = 128 # A power of 2, please!
 CIFAR_SZ = 32
 
 def load_test_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
@@ -19,6 +19,16 @@ def load_test_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
     pix = np.array(im)
     assert pix.shape == (IMAGE_SZ, IMAGE_SZ, 3)
     return pix[np.newaxis] / 255.0 # Need to normalize images to [0, 1]
+
+def load_test_images(in_PATH):
+    imgs = []
+    for filename in os.listdir(in_PATH):
+        full_filename = os.path.join(os.path.abspath(in_PATH), filename)
+        img = Image.open(full_filename).convert('RGB')
+        pix = np.array(img)
+        pix_norm = pix / 255.0
+        imgs.append(pix_norm)
+    return np.array(imgs)
 
 def preprocess_images_inpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
     m = imgs.shape[0]
@@ -134,7 +144,6 @@ def delete_blank_images(url_PATH, ref_img_PATH):
             print('Deleting %s' % filename)
             os.remove(os.path.join(os.path.abspath(url_PATH), filename))
 
-IMAGE_SZ2 = 128 # A power of 2, please!
 def resize_images(src_PATH, dst_PATH):
     for filename in os.listdir(src_PATH):
         print('Processing %s' % filename)
@@ -149,6 +158,6 @@ def resize_images(src_PATH, dst_PATH):
             dim = h
             x_start = int((w - dim) / 2)
             img_crop = img_raw.crop(box=(x_start, 0, x_start + dim, dim))
-        img_scale = img_crop.resize((IMAGE_SZ2, IMAGE_SZ2), Image.ANTIALIAS)
+        img_scale = img_crop.resize((IMAGE_SZ, IMAGE_SZ), Image.ANTIALIAS)
         full_outfilename = os.path.join(os.path.abspath(dst_PATH), filename)
         img_scale.save(full_outfilename, format='PNG')
