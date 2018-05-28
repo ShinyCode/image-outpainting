@@ -3,6 +3,8 @@ from PIL import Image
 import scipy.misc
 import matplotlib.pyplot as plt
 import cv2
+import wget
+import os
 
 IMAGE_SZ = 64 # A power of 2, please!
 CIFAR_SZ = 32
@@ -112,3 +114,41 @@ def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH, blend=False):
         out = dst.copy()
         out[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :] = src
     cv2.imwrite(out_PATH, out)
+
+def download_images(url_list_PATH, out_PATH, prefix):
+    with open(url_list_PATH, 'r') as fp:
+        for i, line in enumerate(fp):
+            url = line.strip()
+            _, ext = os.path.splitext(url)
+            dst = os.path.abspath(os.path.join(out_PATH, prefix + str(i) + ext))
+            filename = wget.download(url, dst)
+            print('Downloaded %s' % filename)
+
+def delete_blank_images(url_PATH, ref_img_PATH):
+    ref_img = Image.open(os.path.abspath(ref_img_PATH)).convert('RGB')
+    ref_img_array = np.array(ref_img)
+    for filename in os.listdir(url_PATH):
+        img = Image.open(os.path.join(os.path.abspath(url_PATH), filename)).convert('RGB')
+        img_array = np.array(img)
+        if img_array.shape == ref_img_array.shape and np.sum(img_array) == np.sum(ref_img_array):
+            print('Deleting %s' % filename)
+            os.remove(os.path.join(os.path.abspath(url_PATH), filename))
+
+IMAGE_SZ2 = 128 # A power of 2, please!
+def resize_images(src_PATH, dst_PATH):
+    for filename in os.listdir(src_PATH):
+        print('Processing %s' % filename)
+        full_filename = os.path.join(os.path.abspath(src_PATH), filename)
+        img_raw = Image.open(full_filename).convert('RGB')
+        w, h = img_raw.size
+        if w <= h:
+            dim = w
+            y_start = int((h - dim) / 2)
+            img_crop = img_raw.crop(box=(0, y_start, dim, y_start + dim))
+        else: # w > h
+            dim = h
+            x_start = int((w - dim) / 2)
+            img_crop = img_raw.crop(box=(x_start, 0, x_start + dim, dim))
+        img_scale = img_crop.resize((IMAGE_SZ2, IMAGE_SZ2), Image.ANTIALIAS)
+        full_outfilename = os.path.join(os.path.abspath(dst_PATH), filename)
+        img_scale.save(full_outfilename, format='PNG')
