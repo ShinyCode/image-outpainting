@@ -21,7 +21,7 @@ IMAGE_SZ = 128
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
-imgs = util.load_test_images('imagenet_plants')
+imgs = util.load_images('imagenet_plants')
 imgs_p = util.preprocess_images_outpainting(imgs)
 
 test_img = imgs[0, np.newaxis]

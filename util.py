@@ -22,7 +22,7 @@ def load_test_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
     assert pix.shape == (IMAGE_SZ, IMAGE_SZ, 3)
     return pix[np.newaxis] / 255.0 # Need to normalize images to [0, 1]
 
-def load_test_images(in_PATH):
+def load_images(in_PATH):
     imgs = []
     for filename in os.listdir(in_PATH):
         full_filename = os.path.join(os.path.abspath(in_PATH), filename)
