@@ -22,9 +22,11 @@ def load_test_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
     assert pix.shape == (IMAGE_SZ, IMAGE_SZ, 3)
     return pix[np.newaxis] / 255.0 # Need to normalize images to [0, 1]
 
-def load_images(in_PATH):
+def load_images(in_PATH, verbose=False):
     imgs = []
     for filename in sorted(os.listdir(in_PATH)):
+        if verbose:
+            print('Processing %s' % filename)
         full_filename = os.path.join(os.path.abspath(in_PATH), filename)
         img = Image.open(full_filename).convert('RGB')
         pix = np.array(img)
@@ -33,7 +35,7 @@ def load_images(in_PATH):
     return np.array(imgs)
 
 def compile_images(in_PATH, out_PATH):
-    imgs = load_images(in_PATH)
+    imgs = load_images(in_PATH, verbose=True)
     np.save(out_PATH, imgs)
 
 def preprocess_images_inpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
