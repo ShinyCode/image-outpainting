@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import model3 as model
 import util
+import os
 
 '''
 Input to the network is RGB image with binary channel indicating image completion (1 for pixel to be completed) (Iizuka)
@@ -12,24 +13,43 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # np.random.seed(0)
 # tf.set_random_seed(0)
 
-BATCH_SZ = 32
+BATCH_SZ = 1
 VERBOSE = True
 EPSILON = 1e-9
 IMAGE_SZ = 128
+OUT_DIR = 'output'
+
+if os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 1:
+    print('Warning, OUT_DIR already exists. Aborting.')
+    exit()
+
+if not os.path.isdir(OUT_DIR):
+    os.makedirs(OUT_DIR)
 
 # Generator code
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
-imgs = util.load_images('imagenet_plants')
+'''
+imgs = np.load('places/places_128_small.npy') # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
 imgs_p = util.preprocess_images_outpainting(imgs)
 
 test_img = imgs[0, np.newaxis]
 test_img_p = imgs_p[0, np.newaxis]
-util.save_image(test_img[0], 'output/test_img.png')
+'''
 
+imgs = util.load_city_image()
+imgs_p = util.preprocess_images_outpainting(imgs)
+
+test_img = imgs.copy()
+test_img_p = imgs_p.copy()
+
+util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img.png'))
+
+'''
 imgs = imgs[1:]
 imgs_p = imgs_p[1:]
+'''
 
 # FOR DEBUGGING:
 '''
@@ -102,8 +122,8 @@ with tf.Session() as sess:
             G_MSE_loss_curr_dev = None
             if G_sample_ is not None:
                 output, G_MSE_loss_curr_dev = sess.run([G_sample, G_MSE_loss], feed_dict={DG_X: test_img, G_Z: test_img_p})
-                util.save_image(output[0], 'output/G%d.png' % i)
-                last_output_PATH = 'output/G%d.png' % i
+                util.save_image(output[0], os.path.join(OUT_DIR, 'G%d.png' % i))
+                last_output_PATH = os.path.join(OUT_DIR, 'G%d.png' % i)
             print('Iteration [%d/%d]:' % (i, N_ITERS))
             if G_MSE_loss_curr is not None:
                 print('\tG_MSE_loss (train) = %f' % G_MSE_loss_curr)
@@ -121,8 +141,8 @@ with tf.Session() as sess:
             dev_MSE_loss.append([i, G_MSE_loss_curr_dev])
 
 # Save the loss
-np.savez('output/loss.npz', train_MSE_loss=np.array(train_MSE_loss), dev_MSE_loss=np.array(dev_MSE_loss))
+np.savez(os.path.join(OUT_DIR, 'loss.npz'), train_MSE_loss=np.array(train_MSE_loss), dev_MSE_loss=np.array(dev_MSE_loss))
 # Save the final blended output, and make a graph of the loss.
-util.plot_loss('output/loss.npz', 'MSE Loss During Training', 'output/loss_plot.png')
-util.postprocess_images_outpainting('output/test_img.png', last_output_PATH, 'output/out_paste.png', blend=False)
-util.postprocess_images_outpainting('output/test_img.png', last_output_PATH, 'output/out_blend.png', blend=True)
+util.plot_loss(os.path.join(OUT_DIR, 'loss.npz'), 'MSE Loss During Training', os.path.join(OUT_DIR, 'loss_plot.png'))
+util.postprocess_images_outpainting(os.path.join(OUT_DIR, 'test_img.png'), last_output_PATH, os.path.join(OUT_DIR, 'out_paste.png'), blend=False)
+util.postprocess_images_outpainting(os.path.join(OUT_DIR, 'test_img.png'), last_output_PATH, os.path.join(OUT_DIR, 'out_paste.png'), blend=True)
