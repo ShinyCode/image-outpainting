@@ -44,10 +44,14 @@ test_img = imgs.copy()
 test_img_p = imgs_p.copy()
 '''
 
-util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img.png'))
-
 imgs = imgs[1:]
 imgs_p = imgs_p[1:]
+
+train_img = imgs[0, np.newaxis]
+train_img_p = imgs_p[0, np.newaxis]
+
+util.save_image(train_img[0], os.path.join(OUT_DIR, 'train_img.png'))
+util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img.png'))
 
 # FOR DEBUGGING:
 '''
@@ -119,9 +123,13 @@ with tf.Session() as sess:
         if i % INTV_PRINT == 0:
             G_MSE_loss_curr_dev = None
             if G_sample_ is not None:
+                # Print out the dev image
                 output, G_MSE_loss_curr_dev = sess.run([G_sample, G_MSE_loss], feed_dict={DG_X: test_img, G_Z: test_img_p})
-                util.save_image(output[0], os.path.join(OUT_DIR, 'G%d.png' % i))
-                last_output_PATH = os.path.join(OUT_DIR, 'G%d.png' % i)
+                util.save_image(output[0], os.path.join(OUT_DIR, 'dev%d.png' % i))
+                last_output_PATH = os.path.join(OUT_DIR, 'dev%d.png' % i)
+                # Also save the train image
+                output, G_MSE_loss_curr_dev = sess.run([G_sample, G_MSE_loss], feed_dict={DG_X: train_img, G_Z: train_img_p})
+                util.save_image(output[0], os.path.join(OUT_DIR, 'train%d.png' % i))
             print('Iteration [%d/%d]:' % (i, N_ITERS))
             if G_MSE_loss_curr is not None:
                 print('\tG_MSE_loss (train) = %f' % G_MSE_loss_curr)
