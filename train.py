@@ -4,6 +4,9 @@ from PIL import Image
 import model3 as model
 import util
 import os
+import sys
+
+tf.reset_default_graph() # TODO: Check this doesn't break stuff
 
 '''
 Input to the network is RGB image with binary channel indicating image completion (1 for pixel to be completed) (Iizuka)
@@ -13,18 +16,33 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # np.random.seed(0)
 # tf.set_random_seed(0)
 
-BATCH_SZ = 16
+BATCH_SZ = 4
 VERBOSE = True
 EPSILON = 1e-9
 IMAGE_SZ = 128
 OUT_DIR = 'output'
+MODEL_DIR = os.path.join(OUT_DIR, 'models')
+INFO_PATH = os.path.join(OUT_DIR, 'run.txt')
 
-if os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 1:
+if os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
     exit()
 
 if not os.path.isdir(OUT_DIR):
     os.makedirs(OUT_DIR)
+
+if not os.path.isdir(MODEL_DIR):
+    os.makedirs(MODEL_DIR)
+
+if not os.path.isfile(INFO_PATH):
+    print('Error: run.txt not found! Create file before proceeding.')
+    exit()
+
+start_iter = 0
+model_filename = None
+if len(sys.argv) >= 2:
+    start_iter = int(sys.argv[1])
+    model_filename = os.path.join(MODEL_DIR, 'model%d.ckpt' % i)
 
 # Generator code
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
@@ -80,10 +98,11 @@ C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C)
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 
-N_ITERS = 3000
-N_ITERS_P1 = 1000 # How many iterations to train in phase 1
-N_ITERS_P2 = 400 # How many iterations to train in phase 2
+N_ITERS = 2000
+N_ITERS_P1 = 500 # How many iterations to train in phase 1
+N_ITERS_P2 = 500 # How many iterations to train in phase 2
 INTV_PRINT = 20 # How often to print
+INTV_SAVE = 100 # How often to save the model
 
 train_MSE_loss = []
 dev_MSE_loss = []
@@ -92,9 +111,15 @@ last_output_PATH = None
 
 assert N_ITERS > N_ITERS_P1 + N_ITERS_P2
 
+# Saver to save the session
+saver = tf.train.Saver()
+
 with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    for i in range(N_ITERS):
+    if model_filename is None:
+        sess.run(tf.global_variables_initializer())
+    else:
+        saver.restore(sess, model_filename)
+    for i in range(start_iter, N_ITERS):
         # TODO: Sample batches from training set
         batch, batch_p = util.sample_random_minibatch(imgs, imgs_p, BATCH_SZ)
         G_sample_ = None
@@ -145,6 +170,11 @@ with tf.Session() as sess:
             train_MSE_loss.append([i, G_MSE_loss_curr])
         if G_MSE_loss_curr_dev is not None:
             dev_MSE_loss.append([i, G_MSE_loss_curr_dev])
+
+        # Save the model every so often
+        if i % INTV_SAVE == 0:
+            save_path = saver.save(sess, os.path.join(MODEL_DIR, 'model%d.ckpt' % i))
+            print('Model saved in path: %s' % save_path)
 
 # Save the loss
 np.savez(os.path.join(OUT_DIR, 'loss.npz'), train_MSE_loss=np.array(train_MSE_loss), dev_MSE_loss=np.array(dev_MSE_loss))
