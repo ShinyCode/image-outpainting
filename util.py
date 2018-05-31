@@ -58,10 +58,6 @@ def preprocess_images_outpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAG
 
     mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
     mask[:, :, :int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8):, :] = 1.0
-    # mask[:, :, int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8), :] = 1.0
-    # mask[:, :, int(2 * IMAGE_SZ / 8) + 1, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 1, :] = 0.8
-    # mask[:, :, int(2 * IMAGE_SZ / 8) + 2, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 2, :] = 0.5
-    # mask[:, :, int(2 * IMAGE_SZ / 8) + 3, :] = mask[:, :, int(-2 * IMAGE_SZ / 8) - 3, :] = 0.2
     imgs_p = np.concatenate((imgs, mask), axis=3)
     return imgs_p
 
@@ -181,10 +177,6 @@ def resize_images(src_PATH, dst_PATH):
 def compute_MSE_loss(img1, img2):
     mask = np.zeros((IMAGE_SZ, IMAGE_SZ, 1))
     mask[:, :int(2 * IMAGE_SZ / 8), :] = mask[:, int(-2 * IMAGE_SZ / 8):, :] = 1.0
-    # mask[:, int(2 * IMAGE_SZ / 8), :] = mask[:, int(-2 * IMAGE_SZ / 8), :] = 1.0
-    # mask[:, int(2 * IMAGE_SZ / 8) + 1, :] = mask[:, int(-2 * IMAGE_SZ / 8) - 1, :] = 0.8
-    # mask[:, int(2 * IMAGE_SZ / 8) + 2, :] = mask[:, int(-2 * IMAGE_SZ / 8) - 2, :] = 0.5
-    # mask[:, int(2 * IMAGE_SZ / 8) + 3, :] = mask[:, int(-2 * IMAGE_SZ / 8) - 3, :] = 0.2
-    img1_mask = img1 * mask
-    img2_mask = img2 * mask
+    img1_mask = (img1 / 255.0) * mask
+    img2_mask = (img2 / 255.0) * mask
     return np.mean((img1_mask - img2_mask) ** 2)
