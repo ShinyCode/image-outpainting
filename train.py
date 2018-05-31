@@ -17,7 +17,7 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # tf.set_random_seed(0)
 
 BATCH_SZ = 10
-VERBOSE = True
+VERBOSE = False
 EPSILON = 1e-9
 IMAGE_SZ = 128
 OUT_DIR = 'output'
@@ -54,14 +54,6 @@ imgs_p = util.preprocess_images_outpainting(imgs)
 test_img = imgs[0, np.newaxis]
 test_img_p = imgs_p[0, np.newaxis]
 
-'''
-imgs = util.load_city_image()
-imgs_p = util.preprocess_images_outpainting(imgs)
-
-test_img = imgs.copy()
-test_img_p = imgs_p.copy()
-'''
-
 imgs = imgs[1:]
 imgs_p = imgs_p[1:]
 
@@ -72,14 +64,6 @@ util.save_image(train_img[0], os.path.join(OUT_DIR, 'train_img.png'))
 util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img.png'))
 
 # FOR DEBUGGING:
-'''
-util.vis_image(imgs[0])
-util.vis_image(imgs_p[0,:,:,:3])
-util.vis_image(imgs_p[0,:,:,3], mode='L')
-util.save_image(imgs_p[0,:,:,:3], 'masked.png')
-util.save_image(imgs_p[0,:,:,3], 'mask.png', mode='L')
-'''
-
 G_sample = model.generator(G_Z)
 vars_G = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='G')
 
