@@ -16,7 +16,7 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # np.random.seed(0)
 # tf.set_random_seed(0)
 
-BATCH_SZ = 10
+BATCH_SZ = 16
 VERBOSE = False
 EPSILON = 1e-9
 IMAGE_SZ = 128
@@ -82,11 +82,11 @@ C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C)
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 
-N_ITERS = 2000
-N_ITERS_P1 = 500 # How many iterations to train in phase 1
-N_ITERS_P2 = 500 # How many iterations to train in phase 2
-INTV_PRINT = 20 # How often to print
-INTV_SAVE = 100 # How often to save the model
+N_ITERS = 227500
+N_ITERS_P1 = 40950 # How many iterations to train in phase 1
+N_ITERS_P2 = 4550 # How many iterations to train in phase 2
+INTV_PRINT = 100 # How often to print
+INTV_SAVE = 200 # How often to save the model
 
 train_MSE_loss = []
 dev_MSE_loss = []
