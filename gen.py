@@ -16,7 +16,7 @@ tf.reset_default_graph()
 
 IMAGE_SZ = 128
 
-img = np.array(Image.open(in_PATH).convert('RGB')[np.newaxis])
+img = np.array(Image.open(in_PATH).convert('RGB'))[np.newaxis]
 img_p = util.preprocess_images_outpainting(img)
 
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
@@ -25,6 +25,6 @@ G_sample = model.generator(G_Z)
 saver = tf.train.Saver()
 
 with tf.Session() as sess:
-    saver.restore(sess, model_filename)
+    saver.restore(sess, model_PATH)
     output, = sess.run([G_sample], feed_dict={G_Z: img_p})
     util.save_image(output[0], out_PATH)
