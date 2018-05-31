@@ -16,7 +16,7 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # np.random.seed(0)
 # tf.set_random_seed(0)
 
-BATCH_SZ = 4
+BATCH_SZ = 10
 VERBOSE = True
 EPSILON = 1e-9
 IMAGE_SZ = 128
@@ -24,7 +24,7 @@ OUT_DIR = 'output'
 MODEL_DIR = os.path.join(OUT_DIR, 'models')
 INFO_PATH = os.path.join(OUT_DIR, 'run.txt')
 
-if os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
+if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
     exit()
 
@@ -42,13 +42,13 @@ start_iter = 0
 model_filename = None
 if len(sys.argv) >= 2:
     start_iter = int(sys.argv[1])
-    model_filename = os.path.join(MODEL_DIR, 'model%d.ckpt' % i)
+    model_filename = os.path.join(MODEL_DIR, 'model%d.ckpt' % start_iter)
 
 # Generator code
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
-imgs = np.load('places/places_128_small.npy') # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
+imgs = np.load('places/places_128_tiny.npy') # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
 imgs_p = util.preprocess_images_outpainting(imgs)
 
 test_img = imgs[0, np.newaxis]
