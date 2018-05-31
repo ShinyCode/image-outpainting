@@ -119,7 +119,7 @@ with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
     else:
         saver.restore(sess, model_filename)
-    for i in range(start_iter, N_ITERS):
+    for i in range(start_iter, N_ITERS + 1):
         # TODO: Sample batches from training set
         batch, batch_p = util.sample_random_minibatch(imgs, imgs_p, BATCH_SZ)
         G_sample_ = None

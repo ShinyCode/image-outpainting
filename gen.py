@@ -16,7 +16,7 @@ tf.reset_default_graph()
 
 IMAGE_SZ = 128
 
-img = np.array(Image.open(in_PATH).convert('RGB'))[np.newaxis]
+img = np.array(Image.open(in_PATH).convert('RGB'))[np.newaxis] / 255.0
 img_p = util.preprocess_images_outpainting(img)
 
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
