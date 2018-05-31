@@ -153,7 +153,7 @@ with tf.Session() as sess:
                 util.save_image(output[0], os.path.join(OUT_DIR, 'dev%d.png' % i))
                 last_output_PATH = os.path.join(OUT_DIR, 'dev%d.png' % i)
                 # Also save the train image
-                output, G_MSE_loss_curr_dev = sess.run([G_sample, G_MSE_loss], feed_dict={DG_X: train_img, G_Z: train_img_p})
+                output = sess.run([G_sample], feed_dict={DG_X: train_img, G_Z: train_img_p})
                 util.save_image(output[0], os.path.join(OUT_DIR, 'train%d.png' % i))
             print('Iteration [%d/%d]:' % (i, N_ITERS))
             if G_MSE_loss_curr is not None:

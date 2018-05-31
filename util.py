@@ -177,3 +177,14 @@ def resize_images(src_PATH, dst_PATH):
         img_scale = img_crop.resize((IMAGE_SZ, IMAGE_SZ), Image.ANTIALIAS)
         full_outfilename = os.path.join(os.path.abspath(dst_PATH), filename)
         img_scale.save(full_outfilename, format='PNG')
+
+def compute_MSE_loss(img1, img2):
+    mask = np.zeros((IMAGE_SZ, IMAGE_SZ, 1))
+    mask[:, :int(2 * IMAGE_SZ / 8), :] = mask[:, int(-2 * IMAGE_SZ / 8):, :] = 1.0
+    # mask[:, int(2 * IMAGE_SZ / 8), :] = mask[:, int(-2 * IMAGE_SZ / 8), :] = 1.0
+    # mask[:, int(2 * IMAGE_SZ / 8) + 1, :] = mask[:, int(-2 * IMAGE_SZ / 8) - 1, :] = 0.8
+    # mask[:, int(2 * IMAGE_SZ / 8) + 2, :] = mask[:, int(-2 * IMAGE_SZ / 8) - 2, :] = 0.5
+    # mask[:, int(2 * IMAGE_SZ / 8) + 3, :] = mask[:, int(-2 * IMAGE_SZ / 8) - 3, :] = 0.2
+    img1_mask = img1 * mask
+    img2_mask = img2 * mask
+    return np.mean((img1_mask - img2_mask) ** 2)
