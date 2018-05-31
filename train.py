@@ -48,20 +48,27 @@ if len(sys.argv) >= 2:
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
-imgs = np.load('places/places_128_tiny.npy') # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
+data = np.load('places/places_128.npz')
+imgs = data['imgs_train'] # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
 imgs_p = util.preprocess_images_outpainting(imgs)
 
-test_img = imgs[0, np.newaxis]
-test_img_p = imgs_p[0, np.newaxis]
+test_imgs = data['imgs_test']
+test_imgs_p = util.preprocess_images_outpainting(test_imgs)
 
-imgs = imgs[1:]
-imgs_p = imgs_p[1:]
+test_img = test_imgs[0, np.newaxis]
+test_img_p = test_imgs_p[0, np.newaxis]
 
 train_img = imgs[0, np.newaxis]
 train_img_p = imgs_p[0, np.newaxis]
 
 util.save_image(train_img[0], os.path.join(OUT_DIR, 'train_img.png'))
-util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img.png'))
+util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img0.png'))
+util.save_image(test_img[1], os.path.join(OUT_DIR, 'test_img1.png'))
+util.save_image(test_img[2], os.path.join(OUT_DIR, 'test_img2.png'))
+util.save_image(test_img[3], os.path.join(OUT_DIR, 'test_img3.png'))
+util.save_image(test_img[4], os.path.join(OUT_DIR, 'test_img4.png'))
+
+exit()
 
 # FOR DEBUGGING:
 G_sample = model.generator(G_Z)
