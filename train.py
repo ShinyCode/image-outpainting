@@ -23,6 +23,7 @@ IMAGE_SZ = 128
 OUT_DIR = 'output'
 MODEL_DIR = os.path.join(OUT_DIR, 'models')
 INFO_PATH = os.path.join(OUT_DIR, 'run.txt')
+N_TEST = 10
 
 if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
@@ -55,20 +56,15 @@ imgs_p = util.preprocess_images_outpainting(imgs)
 test_imgs = data['imgs_test']
 test_imgs_p = util.preprocess_images_outpainting(test_imgs)
 
-test_img = test_imgs[0, np.newaxis]
-test_img_p = test_imgs_p[0, np.newaxis]
+test_img = test_imgs[:N_TEST]
+test_img_p = test_imgs_p[:N_TEST]
 
-train_img = imgs[0, np.newaxis]
-train_img_p = imgs_p[0, np.newaxis]
+train_img = imgs[4, np.newaxis]
+train_img_p = imgs_p[4, np.newaxis]
 
 util.save_image(train_img[0], os.path.join(OUT_DIR, 'train_img.png'))
-util.save_image(test_img[0], os.path.join(OUT_DIR, 'test_img0.png'))
-util.save_image(test_img[1], os.path.join(OUT_DIR, 'test_img1.png'))
-util.save_image(test_img[2], os.path.join(OUT_DIR, 'test_img2.png'))
-util.save_image(test_img[3], os.path.join(OUT_DIR, 'test_img3.png'))
-util.save_image(test_img[4], os.path.join(OUT_DIR, 'test_img4.png'))
-
-exit()
+for i_test in range(N_TEST):
+    util.save_image(test_imgs[i_test], os.path.join(OUT_DIR, 'test_img_%d.png' % i_test))
 
 # FOR DEBUGGING:
 G_sample = model.generator(G_Z)
@@ -92,13 +88,14 @@ G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 N_ITERS = 227500
 N_ITERS_P1 = 40950 # How many iterations to train in phase 1
 N_ITERS_P2 = 4550 # How many iterations to train in phase 2
+
 INTV_PRINT = 100 # How often to print
 INTV_SAVE = 200 # How often to save the model
 
 train_MSE_loss = []
 dev_MSE_loss = []
 
-last_output_PATH = None
+last_output_PATH = [None] * N_TEST
 
 assert N_ITERS > N_ITERS_P1 + N_ITERS_P2
 
@@ -141,8 +138,9 @@ with tf.Session() as sess:
             if G_sample_ is not None:
                 # Print out the dev image
                 output, G_MSE_loss_curr_dev = sess.run([G_sample, G_MSE_loss], feed_dict={DG_X: test_img, G_Z: test_img_p})
-                util.save_image(output[0], os.path.join(OUT_DIR, 'dev%d.png' % i))
-                last_output_PATH = os.path.join(OUT_DIR, 'dev%d.png' % i)
+                for i_test in range(N_TEST):
+                    util.save_image(output[i_test], os.path.join(OUT_DIR, 'dev_%d_%d.png' % (i_test, i)))
+                    last_output_PATH[i_test] = os.path.join(OUT_DIR, 'dev_%d_%d.png' % (i_test, i))
                 # Also save the train image
                 output, = sess.run([G_sample], feed_dict={DG_X: train_img, G_Z: train_img_p})
                 util.save_image(output[0], os.path.join(OUT_DIR, 'train%d.png' % i))
@@ -167,9 +165,14 @@ with tf.Session() as sess:
             save_path = saver.save(sess, os.path.join(MODEL_DIR, 'model%d.ckpt' % i))
             print('Model saved in path: %s' % save_path)
 
+        # Save the loss every so often
+        if i % INTV_SAVE == 0:
+            np.savez(os.path.join(OUT_DIR, 'loss.npz'), train_MSE_loss=np.array(train_MSE_loss), dev_MSE_loss=np.array(dev_MSE_loss))
+
 # Save the loss
 np.savez(os.path.join(OUT_DIR, 'loss.npz'), train_MSE_loss=np.array(train_MSE_loss), dev_MSE_loss=np.array(dev_MSE_loss))
 # Save the final blended output, and make a graph of the loss.
 util.plot_loss(os.path.join(OUT_DIR, 'loss.npz'), 'MSE Loss During Training', os.path.join(OUT_DIR, 'loss_plot.png'))
-util.postprocess_images_outpainting(os.path.join(OUT_DIR, 'test_img.png'), last_output_PATH, os.path.join(OUT_DIR, 'out_paste.png'), blend=False)
-util.postprocess_images_outpainting(os.path.join(OUT_DIR, 'test_img.png'), last_output_PATH, os.path.join(OUT_DIR, 'out_blend.png'), blend=True)
+for i_test in range(N_TEST):
+    util.postprocess_images_outpainting(os.path.join(OUT_DIR, 'test_img_%d.png' % i_test), last_output_PATH[i_test], os.path.join(OUT_DIR, 'out_paste_%d.png' % i_test), blend=False)
+    util.postprocess_images_outpainting(os.path.join(OUT_DIR, 'test_img_%d.png' % i_test), last_output_PATH[i_test], os.path.join(OUT_DIR, 'out_blend_%d.png' % i_test), blend=True)
