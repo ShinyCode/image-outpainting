@@ -89,8 +89,8 @@ N_ITERS = 227500
 N_ITERS_P1 = 40950 # How many iterations to train in phase 1
 N_ITERS_P2 = 4550 # How many iterations to train in phase 2
 
-INTV_PRINT = 100 # How often to print
-INTV_SAVE = 200 # How often to save the model
+INTV_PRINT = 200 # How often to print
+INTV_SAVE = 1000 # How often to save the model
 
 train_MSE_loss = []
 dev_MSE_loss = []
