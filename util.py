@@ -7,6 +7,7 @@ import wget
 import os
 from urllib.error import HTTPError
 from urllib.error import URLError
+import re
 
 IMAGE_SZ = 128 # A power of 2, please!
 CIFAR_SZ = 32
@@ -129,6 +130,23 @@ def plot_loss(loss_filename, title, out_filename):
     plt.savefig(out_filename)
     plt.clf()
 
+def plot_loss2(loss_filename, title, out_filename):
+    loss = np.load(loss_filename)
+    itrain_MSE_loss, train_MSE_loss = loss['itrain_MSE_loss'], loss['train_MSE_loss']
+    idev_MSE_loss, dev_MSE_loss = loss['idev_MSE_loss'], loss['dev_MSE_loss']
+    iG_loss, G_loss = loss['iG_loss'], loss['G_loss']
+    iD_loss, D_loss = loss['iD_loss'], loss['D_loss']
+    label_train, = plt.plot(itrain_MSE_loss, train_MSE_loss, label='Training MSE loss')
+    label_dev, = plt.plot(idev_MSE_loss, dev_MSE_loss, label='Dev MSE loss')
+    label_G, = plt.plot(iG_loss, G_loss, label='Generator loss')
+    label_D, = plt.plot(iD_loss, D_loss, label='Discriminator loss')
+    plt.legend(handles=[label_train, label_dev, label_G, label_D])
+    plt.xlabel('Iteration')
+    plt.ylabel('Loss')
+    plt.title(title)
+    plt.savefig(out_filename)
+    plt.clf()
+
 def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH, blend=False): # img, img_0 are (64, 64, 3), mask is (64, 64, 1)
     src = cv2.imread(img_PATH)[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :]
     dst = cv2.imread(img_o_PATH)
@@ -204,3 +222,64 @@ def compute_MSE_loss(img1, img2):
     img1_mask = (img1 / 255.0) * mask
     img2_mask = (img2 / 255.0) * mask
     return np.mean((img1_mask - img2_mask) ** 2)
+
+def parse_log(in_PATH, out_PATH):
+    data = []
+    curr_list = []
+    with open(in_PATH, 'r') as fp:
+        for i, line in enumerate(fp):
+            if i == 0:
+                continue
+            line = line.strip()
+            if line.startswith('----'):
+                continue
+            elif line.startswith('Model'):
+                continue
+            elif line.startswith('Iteration'):
+                if len(curr_list):
+                    data.append(curr_list)
+                    curr_list = []
+                curr_list.append(line)
+            else:
+                curr_list.append(line)
+        if len(curr_list):
+            data.append(curr_list)
+    G_MSE_train, G_MSE_dev, G, C = None, None, None, None
+    G_MSE_train_s, G_MSE_dev_s, G_s, C_s = [], [], [], []
+    G_MSE_train_is, G_MSE_dev_is, G_is, C_is = [], [], [], []
+    def extract_loss(str):
+        return float(re.findall('= ([\d, .]+)', str)[0])
+    for entry in data:
+        i = int(re.findall('\[(\d+)/', entry[0])[0])
+        if len(entry) == 3: # Phase 1
+            G_MSE_train = extract_loss(entry[1])
+            G_MSE_dev = extract_loss(entry[2])
+        elif len(entry) == 2: # Phase 2
+            C = extract_loss(entry[1])
+        elif len(entry) == 5: # Phase 3
+            G_MSE_train = extract_loss(entry[1])
+            G_MSE_dev = extract_loss(entry[2])
+            G = extract_loss(entry[3])
+            C = extract_loss(entry[4])
+        if G_MSE_train is not None:
+            G_MSE_train_s.append(G_MSE_train)
+            G_MSE_train_is.append(i)
+        if G_MSE_dev is not None:
+            G_MSE_dev_s.append(G_MSE_dev)
+            G_MSE_dev_is.append(i)
+        if G is not None:
+            G_s.append(G)
+            G_is.append(i)
+        if C is not None:
+            C_s.append(C)
+            C_is.append(i)
+    G_MSE_train_sm = np.array(G_MSE_train_s)
+    G_MSE_dev_sm = np.array(G_MSE_dev_s)
+    G_sm = np.array(G_s)
+    C_sm = np.array(C_s)
+    G_MSE_train_ism = np.array(G_MSE_train_is)
+    G_MSE_dev_ism = np.array(G_MSE_dev_is)
+    G_ism = np.array(G_is)
+    C_ism = np.array(C_is)
+    np.savez(out_PATH, train_MSE_loss=G_MSE_train_sm, dev_MSE_loss=G_MSE_dev_sm, G_loss=G_sm, D_loss=C_sm,
+             itrain_MSE_loss=G_MSE_train_ism, idev_MSE_loss=G_MSE_dev_ism, iG_loss=G_ism, iD_loss=C_ism)
