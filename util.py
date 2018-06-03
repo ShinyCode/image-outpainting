@@ -2,8 +2,8 @@ import numpy as np
 from PIL import Image
 import scipy.misc
 import matplotlib.pyplot as plt
-import cv2
-import wget
+# import cv2
+# import wget
 import os
 from urllib.error import HTTPError
 from urllib.error import URLError
@@ -204,3 +204,18 @@ def compute_MSE_loss(img1, img2):
     img1_mask = (img1 / 255.0) * mask
     img2_mask = (img2 / 255.0) * mask
     return np.mean((img1_mask - img2_mask) ** 2)
+
+def parse_MSE_loss(loss_file, window_size, outfile):
+    losses = np.load(loss_file)
+    train = losses['train_MSE_loss']
+    dev = losses['dev_MSE_loss']
+    num_train = train.shape[0]
+    new_train_list = []
+    for i in range(0, num_train, window_size):
+        window_avg = np.sum(train[i:i+window_size, 1]) / float(window_size)
+        window_avg_val = np.sum(train[i:i+window_size, 0]) / float(window_size)
+        new_train_list.append([window_avg_val, window_avg])
+
+    np_train = np.array(new_train_list[:-2])
+    np.savez(outfile, train_MSE_loss=np_train, dev_MSE_loss=dev)
+
