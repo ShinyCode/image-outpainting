@@ -6,6 +6,7 @@ import util
 import os
 import sys
 
+# Used for generating new images (pad image, create mask, feed through network, and postprocess)
 if len(sys.argv) != 4:
     print('Usage: python gen.py [model_PATH] [in_PATH] [out_PATH]')
     exit()
@@ -16,10 +17,10 @@ tf.reset_default_graph()
 
 IMAGE_SZ = 128
 
-img = np.array(Image.open(in_PATH).convert('RGB'))[np.newaxis] / 255.0
-img_p = util.preprocess_images_outpainting(img)
+img = np.array(Image.open(in_PATH).convert('RGB'))
+img_p = util.preprocess_images_gen(img / 255.0)
 
-G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
+G_Z = tf.placeholder(tf.float32, shape=[1, img_p.shape[1], img_p.shape[2], 4], name='G_Z')
 G_sample = model.generator(G_Z)
 
 saver = tf.train.Saver()
@@ -27,4 +28,7 @@ saver = tf.train.Saver()
 with tf.Session() as sess:
     saver.restore(sess, model_PATH)
     output, = sess.run([G_sample], feed_dict={G_Z: img_p})
-    util.save_image(output[0], out_PATH)
+    output = util.norm_image(output[0])
+    output_p = util.postprocess_images_gen(img, output, blend=True)
+    img_o = Image.fromarray(output_p, 'RGB')
+    img_o.save(out_PATH, format='PNG')

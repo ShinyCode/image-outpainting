@@ -61,6 +61,18 @@ def preprocess_images_outpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAG
     imgs_p = np.concatenate((imgs, mask), axis=3)
     return imgs_p
 
+# Preprocesses a single image for gen (expands the size)
+def preprocess_images_gen(img):
+    img = np.array(img, copy=True) # Don't want to overwrite
+    pix_avg = np.mean(img)
+    dw = int(2 * IMAGE_SZ / 8) # Amount that will be outpainted on each side
+    img_expand = np.ones((img.shape[0], img.shape[1] + 2 * dw, img.shape[2])) * pix_avg
+    img_expand[:, dw:-dw, :] = img
+    mask = np.zeros((img_expand.shape[0], img_expand.shape[1], 1))
+    mask[:, :int(2 * IMAGE_SZ / 8), :] = mask[:, int(-2 * IMAGE_SZ / 8):, :] = 1.0
+    img_p = np.concatenate((img_expand, mask), axis=2)
+    return img_p[np.newaxis]
+
 def generate_rand_img(batch_size, w, h, nc): # width, height, number of channels, TODO: make the mask actually a binary thing
     # return tf.random_uniform([batch_size, w, h, nc], minval=0, maxval=256, dtype=tf.float32)
     return np.zeros((batch_size, w, h, nc), dtype=np.float32)
@@ -69,7 +81,7 @@ def norm_image(img_r):
     min_val = np.min(img_r)
     max_val = np.max(img_r)
     # img_norm = (255.0 * (img_r - min_val) / (max_val - min_val)).astype(np.int8)
-    img_norm = (img_r * 255.0).astype(np.int8)
+    img_norm = (img_r * 255.0).astype(np.uint8)
     return img_norm
 
 def vis_image(img_r, mode='RGB'): # img should have 3 channels. Values will be normalized and truncated to [0, 255]
@@ -128,6 +140,18 @@ def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH, blend=False):
         out = dst.copy()
         out[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :] = src
     cv2.imwrite(out_PATH, out)
+
+def postprocess_images_gen(img, img_o, blend=False):
+    src = img[:, :, ::-1].copy()
+    dst = img_o[:, :, ::-1].copy()
+    if blend:
+        mask = np.ones(src.shape, src.dtype) * 255
+        center = (int(dst.shape[1] / 2) - 1, int(dst.shape[0] / 2) - 1)
+        out = cv2.seamlessClone(src, dst, mask, center, cv2.NORMAL_CLONE)
+    else:
+        out = dst.copy()
+        out[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :] = src
+    return out[:, :, ::-1].copy()
 
 def download_images(url_list_PATH, out_PATH, prefix):
     with open(url_list_PATH, 'r') as fp:
