@@ -2,8 +2,8 @@ import numpy as np
 from PIL import Image
 import scipy.misc
 import matplotlib.pyplot as plt
-# import cv2
-# import wget
+import cv2
+import wget
 import os
 from urllib.error import HTTPError
 from urllib.error import URLError

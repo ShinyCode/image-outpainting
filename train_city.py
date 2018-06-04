@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import model4a as model
+import model4d as model
 import util
 import os
 import sys
@@ -16,14 +16,14 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # np.random.seed(0)
 # tf.set_random_seed(0)
 
-BATCH_SZ = 16
+BATCH_SZ = 1
 VERBOSE = False
 EPSILON = 1e-9
 IMAGE_SZ = 128
 OUT_DIR = 'output'
 MODEL_DIR = os.path.join(OUT_DIR, 'models')
 INFO_PATH = os.path.join(OUT_DIR, 'run.txt')
-N_TEST = 10
+N_TEST = 1
 
 if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
@@ -55,7 +55,7 @@ imgs_p = util.preprocess_images_outpainting(imgs)
 test_imgs = util.load_city_image()
 test_imgs_p = util.preprocess_images_outpainting(test_imgs)
 
-test_img = test_img
+test_img = test_imgs
 test_img_p = test_imgs_p
 
 train_img = imgs
@@ -77,7 +77,7 @@ vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
 # http://www.cvc.uab.es/people/joans/slides_tensorflow/tensorflow_html/gan.html
 C_loss = -tf.reduce_mean(tf.log(tf.maximum(C_real, EPSILON)) + tf.log(tf.maximum(1. - C_fake, EPSILON)))
 G_MSE_loss = tf.losses.mean_squared_error(G_sample, DG_X, weights=tf.expand_dims(G_Z[:,:,:,3], -1)) # TODO: MULTIPLY with mask. Actually see if we want to remove this.
-ALPHA = 0.0004
+ALPHA = 0
 G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(tf.maximum(C_fake, EPSILON)))
 
 C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C))
@@ -85,7 +85,7 @@ G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
 
 N_ITERS = 3000
-N_ITERS_P1 = 1000 # How many iterations to train in phase 1
+N_ITERS_P1 = 0 # How many iterations to train in phase 1
 N_ITERS_P2 = 400 # How many iterations to train in phase 2
 
 INTV_PRINT = 200 # How often to print
