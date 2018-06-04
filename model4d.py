@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-print('Imported model3 (for Places365, 128x128 images)')
+print('Imported model4d (for overfitting/dilated conv testing)')
 
 def generator(z):
     with tf.variable_scope('G', reuse=tf.AUTO_REUSE):

@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-print('Imported model3 (for Places365, 128x128 images)')
+print('Imported model4a (for overfitting/dilated conv testing)')
 
 def generator(z):
     with tf.variable_scope('G', reuse=tf.AUTO_REUSE):
@@ -35,7 +35,7 @@ def generator(z):
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
-            dilation_rate=(2, 2),
+            dilation_rate=(1, 1),
             padding="same",
             activation=tf.nn.relu)
 
@@ -44,7 +44,7 @@ def generator(z):
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
-            dilation_rate=(4, 4),
+            dilation_rate=(1, 1),
             padding="same",
             activation=tf.nn.relu)
 
@@ -53,7 +53,7 @@ def generator(z):
             filters=256,
             kernel_size=[3, 3],
             strides=(1, 1),
-            dilation_rate=(8, 8),
+            dilation_rate=(1, 1),
             padding="same",
             activation=tf.nn.relu)
 
