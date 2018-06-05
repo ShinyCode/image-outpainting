@@ -50,7 +50,7 @@ INTV_PRINT = 50 # How often to print
 INTV_SAVE = 10000 # How often to save the model
 ALPHA = 0.0004
 
-if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 1:
+if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
     exit()
 
