@@ -16,7 +16,6 @@ Padding VALID: filter fits entirely, Padding SAME: preserves shape
 # np.random.seed(0)
 # tf.set_random_seed(0)
 
-'''
 # LARGE DATASET TRAINING PARAMS
 BATCH_SZ = 16
 VERBOSE = False
@@ -26,14 +25,14 @@ OUT_DIR = 'output'
 MODEL_DIR = os.path.join(OUT_DIR, 'models')
 INFO_PATH = os.path.join(OUT_DIR, 'run.txt')
 N_TEST = 10
-N_ITERS = 227500
-N_ITERS_P1 = 40950 # How many iterations to train in phase 1
-N_ITERS_P2 = 4550 # How many iterations to train in phase 2
+N_ITERS = 64000
+N_ITERS_P1 = 20000 # How many iterations to train in phase 1
+N_ITERS_P2 = 4000 # How many iterations to train in phase 2
 INTV_PRINT = 200 # How often to print
 INTV_SAVE = 1000 # How often to save the model
 ALPHA = 0.0004
-'''
 
+'''
 # CITY TRAINING PARAMS
 BATCH_SZ = 1
 VERBOSE = False
@@ -49,6 +48,7 @@ N_ITERS_P2 = 400 # How many iterations to train in phase 2
 INTV_PRINT = 50 # How often to print
 INTV_SAVE = 10000 # How often to save the model
 ALPHA = 0.0004
+'''
 
 if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
@@ -64,7 +64,6 @@ if len(sys.argv) >= 2:
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
-'''
 # FULL PLACES365
 data = np.load('places/places_128.npz')
 imgs = data['imgs_train'] # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
@@ -78,8 +77,8 @@ test_img_p = test_imgs_p[:N_TEST]
 
 train_img = imgs[4, np.newaxis]
 train_img_p = imgs_p[4, np.newaxis]
-'''
 
+'''
 # City Image
 imgs = util.load_city_image()
 imgs_p = util.preprocess_images_outpainting(imgs)
@@ -92,6 +91,7 @@ test_img_p = test_imgs_p
 
 train_img = imgs
 train_img_p = imgs_p
+'''
 
 util.save_image(train_img[0], os.path.join(OUT_DIR, 'train_img.png'))
 for i_test in range(N_TEST):
@@ -100,8 +100,8 @@ for i_test in range(N_TEST):
 G_sample = model.generator(G_Z)
 vars_G = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='G')
 
-C_real = model.concatenator(model.global_discriminator(DG_X), model.local_discriminator(DG_X[:, :, :IMAGE_SZ // 2, :]), model.local_discriminator(DG_X[:, :, -IMAGE_SZ // 2::-1, :]))
-C_fake = model.concatenator(model.global_discriminator(G_sample), model.local_discriminator(G_sample[:, :, :IMAGE_SZ // 2, :]), model.local_discriminator(G_sample[:, :, -IMAGE_SZ // 2::-1, :]))
+C_real = model.concatenator(model.global_discriminator(DG_X), model.local_discriminator(DG_X[:, :, :IMAGE_SZ // 2, :]), model.local_discriminator(tf.reverse(DG_X[:, :, -IMAGE_SZ // 2:, :], axis=[2])))
+C_fake = model.concatenator(model.global_discriminator(G_sample), model.local_discriminator(G_sample[:, :, :IMAGE_SZ // 2, :]), model.local_discriminator(tf.reverse(G_sample[:, :, -IMAGE_SZ // 2:, :], axis=[2])))
 vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
 vars_DL = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DL')
 vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')

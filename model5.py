@@ -91,7 +91,7 @@ def generator(z):
 
     return out
 
-# Local Discriminator code
+# Global Discriminator code
 def global_discriminator(x):
     with tf.variable_scope('DG', reuse=tf.AUTO_REUSE):
         conv1 = tf.layers.conv2d(
