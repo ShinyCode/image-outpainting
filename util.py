@@ -283,7 +283,7 @@ def parse_log(in_PATH, out_PATH):
     C_ism = np.array(C_is)
     np.savez(out_PATH, train_MSE_loss=G_MSE_train_sm, dev_MSE_loss=G_MSE_dev_sm, G_loss=G_sm, D_loss=C_sm,
              itrain_MSE_loss=G_MSE_train_ism, idev_MSE_loss=G_MSE_dev_ism, iG_loss=G_ism, iD_loss=C_ism)
-             
+
     def parse_MSE_loss(loss_file, window_size, outfile):
         losses = np.load(loss_file)
         train = losses['train_MSE_loss']
