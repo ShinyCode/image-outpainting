@@ -3,7 +3,7 @@ var util = (function() {
     if (!id.startsWith('#'))
       id = '#' + id;
     var $div = $(id);
-    $div.outerHeight($(window).height());
+    $div.outerHeight($(window).height() - $('.main__header').height());
   };
   var util = {
     resizeDivHeightToScreen: resizeDivHeightToScreen,
