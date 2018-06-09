@@ -8,6 +8,7 @@ import os
 from urllib.error import HTTPError
 from urllib.error import URLError
 import re
+import imageio
 
 IMAGE_SZ = 128 # A power of 2, please!
 CIFAR_SZ = 32
@@ -284,16 +285,28 @@ def parse_log(in_PATH, out_PATH):
     np.savez(out_PATH, train_MSE_loss=G_MSE_train_sm, dev_MSE_loss=G_MSE_dev_sm, G_loss=G_sm, D_loss=C_sm,
              itrain_MSE_loss=G_MSE_train_ism, idev_MSE_loss=G_MSE_dev_ism, iG_loss=G_ism, iD_loss=C_ism)
 
-    def parse_MSE_loss(loss_file, window_size, outfile):
-        losses = np.load(loss_file)
-        train = losses['train_MSE_loss']
-        dev = losses['dev_MSE_loss']
-        num_train = train.shape[0]
-        new_train_list = []
-        for i in range(0, num_train, window_size):
-            window_avg = np.sum(train[i:i+window_size, 1]) / float(window_size)
-            window_avg_val = np.sum(train[i:i+window_size, 0]) / float(window_size)
-            new_train_list.append([window_avg_val, window_avg])
+def parse_MSE_loss(loss_file, window_size, outfile):
+    losses = np.load(loss_file)
+    train = losses['train_MSE_loss']
+    dev = losses['dev_MSE_loss']
+    num_train = train.shape[0]
+    new_train_list = []
+    for i in range(0, num_train, window_size):
+        window_avg = np.sum(train[i:i+window_size, 1]) / float(window_size)
+        window_avg_val = np.sum(train[i:i+window_size, 0]) / float(window_size)
+        new_train_list.append([window_avg_val, window_avg])
 
-        np_train = np.array(new_train_list[:-2])
-        np.savez(outfile, train_MSE_loss=np_train, dev_MSE_loss=dev)
+    np_train = np.array(new_train_list[:-2])
+    np.savez(outfile, train_MSE_loss=np_train, dev_MSE_loss=dev)
+
+def create_GIF(in_PATH, prefix, out_PATH):
+    indices = range(0, 227401, 200)
+    images = []
+    for index in indices:
+        full_filename = os.path.join(os.path.abspath(in_PATH), prefix + str(index) + '.png')
+        try:
+            images.append(imageio.imread(full_filename))
+        except:
+            continue
+    images = images[:50] + images[50::10] + [images[-1]]
+    imageio.mimwrite(out_PATH, images, loop=1, duration=0.1)
