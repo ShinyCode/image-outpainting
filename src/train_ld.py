@@ -1,3 +1,9 @@
+# proj:    image-outpainting
+# file:    train_ld.py
+# authors: Mark Sabini, Gili Rusak
+# desc:    Train the model specified in model_ld.py, which
+#          uses both global and local discriminators.
+# -------------------------------------------------------------
 import tensorflow as tf
 import numpy as np
 from PIL import Image
@@ -6,17 +12,9 @@ import util
 import os
 import sys
 
-tf.reset_default_graph() # TODO: Check this doesn't break stuff
+tf.reset_default_graph()
 
-'''
-Input to the network is RGB image with binary channel indicating image completion (1 for pixel to be completed) (Iizuka)
-Padding VALID: filter fits entirely, Padding SAME: preserves shape
-'''
-
-# np.random.seed(0)
-# tf.set_random_seed(0)
-
-# LARGE DATASET TRAINING PARAMS
+# Places365 Training Hyperparameters
 BATCH_SZ = 16
 VERBOSE = False
 EPSILON = 1e-9
@@ -33,7 +31,7 @@ INTV_SAVE = 1000 # How often to save the model
 ALPHA = 0.0004
 
 '''
-# CITY TRAINING PARAMS
+# City Training Hyperparameters
 BATCH_SZ = 1
 VERBOSE = False
 EPSILON = 1e-9
@@ -50,10 +48,12 @@ INTV_SAVE = 10000 # How often to save the model
 ALPHA = 0.0004
 '''
 
+# Check that we don't clobber a pre-existing run
 if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
     exit()
 
+# Load in a model if specified as the second argument.
 start_iter = 0
 model_filename = None
 if len(sys.argv) >= 2:
@@ -64,7 +64,7 @@ if len(sys.argv) >= 2:
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
-# FULL PLACES365
+# Load Places365 data
 data = np.load('places/places_128.npz')
 imgs = data['imgs_train'] # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
 imgs_p = util.preprocess_images_outpainting(imgs)
@@ -79,7 +79,7 @@ train_img = imgs[4, np.newaxis]
 train_img_p = imgs_p[4, np.newaxis]
 
 '''
-# City Image
+# Load city image data
 imgs = util.load_city_image()
 imgs_p = util.preprocess_images_outpainting(imgs)
 
@@ -93,6 +93,7 @@ train_img = imgs
 train_img_p = imgs_p
 '''
 
+# Write training and testing sample ground truths as reference
 util.save_image(train_img[0], os.path.join(OUT_DIR, 'train_img.png'))
 for i_test in range(N_TEST):
     util.save_image(test_imgs[i_test], os.path.join(OUT_DIR, 'test_img_%d.png' % i_test))
@@ -106,7 +107,6 @@ vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
 vars_DL = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DL')
 vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
 
-# http://www.cvc.uab.es/people/joans/slides_tensorflow/tensorflow_html/gan.html
 C_loss = -tf.reduce_mean(tf.log(tf.maximum(C_real, EPSILON)) + tf.log(tf.maximum(1. - C_fake, EPSILON)))
 G_MSE_loss = tf.losses.mean_squared_error(G_sample, DG_X, weights=tf.expand_dims(G_Z[:,:,:,3], -1)) # TODO: MULTIPLY with mask. Actually see if we want to remove this.
 G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(tf.maximum(C_fake, EPSILON)))
@@ -131,7 +131,6 @@ with tf.Session() as sess:
     else:
         saver.restore(sess, model_filename)
     for i in range(start_iter, N_ITERS + 1):
-        # TODO: Sample batches from training set
         batch, batch_p = util.sample_random_minibatch(imgs, imgs_p, BATCH_SZ)
         G_sample_ = None
         C_loss_curr, G_loss_curr, G_MSE_loss_curr = None, None, None
@@ -155,7 +154,7 @@ with tf.Session() as sess:
             if VERBOSE:
                 print((i, G_loss_curr, 'G', np.min(C_fake_), np.max(C_fake_)))
 
-
+        # Periodically test the generator on held-out images
         if i % INTV_PRINT == 0:
             G_MSE_loss_curr_dev = None
             if G_sample_ is not None:

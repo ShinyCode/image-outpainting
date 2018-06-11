@@ -1,8 +1,12 @@
+# proj:    image-outpainting
+# file:    model_ld.py
+# authors: Mark Sabini, Gili Rusak
+# desc:    Model for outpainting on 128x128 images with both
+#          global and local discriminators.
+# -------------------------------------------------------------
 import tensorflow as tf
-import numpy as np
-from PIL import Image
 
-print('Imported model5 (for Places365, 128x128 images with local discriminator)')
+print('Imported model_ld (for Places365, 128x128 images with local discriminator)')
 
 def generator(z):
     with tf.variable_scope('G', reuse=tf.AUTO_REUSE):
@@ -91,7 +95,6 @@ def generator(z):
 
     return out
 
-# Global Discriminator code
 def global_discriminator(x):
     with tf.variable_scope('DG', reuse=tf.AUTO_REUSE):
         conv1 = tf.layers.conv2d(

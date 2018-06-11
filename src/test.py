@@ -1,12 +1,18 @@
+# proj:    image-outpainting
+# file:    test.py
+# authors: Mark Sabini, Gili Rusak
+# desc:    Script for simulating the training pipeline. Masks out
+#          the sides of an image, feeds it through the network, and
+#          compares the network output to the original image.
+# -------------------------------------------------------------
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import model3 as model
+import model
 import util
 import os
 import sys
 
-# Used for computing losses (remove sides, then outpaint, then compare with ground truth)
 if len(sys.argv) != 4:
     print('Usage: python test.py [model_PATH] [in_PATH] [out_PATH]')
     exit()

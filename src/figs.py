@@ -1,3 +1,8 @@
+# proj:    image-outpainting
+# file:    figs.py
+# authors: Mark Sabini, Gili Rusak
+# desc:    Collection of utilities for generating figures.
+# -------------------------------------------------------------
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt

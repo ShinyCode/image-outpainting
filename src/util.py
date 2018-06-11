@@ -1,20 +1,22 @@
+# proj:    image-outpainting
+# file:    util.py
+# authors: Mark Sabini, Gili Rusak
+# desc:    Various utility functions for all sorts of things.
+# -------------------------------------------------------------
 import numpy as np
 from PIL import Image
 import scipy.misc
 import matplotlib.pyplot as plt
 import cv2
-import wget
 import os
-from urllib.error import HTTPError
-from urllib.error import URLError
 import re
 import imageio
 
-IMAGE_SZ = 128 # A power of 2, please!
-CIFAR_SZ = 32
+IMAGE_SZ = 128 # Should be a power of 2
 
-def load_city_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
-    # TODO: change so it iterates over all images
+# Loads the city image.
+# Returns: normalized numpy array of size (1, IMAGE_SZ, IMAGE_SZ, 3)
+def load_city_image():
     im = Image.open('images/city_128.png').convert('RGB')
     width, height = im.size
     left = (width - IMAGE_SZ) / 2
@@ -24,6 +26,8 @@ def load_city_image(): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 3]
     assert pix.shape == (IMAGE_SZ, IMAGE_SZ, 3)
     return pix[np.newaxis] / 255.0 # Need to normalize images to [0, 1]
 
+# Loads multiple images from a directory.
+# Returns: normalized numpy array of size (m, IMAGE_SZ, IMAGE_SZ, 3)
 def load_images(in_PATH, verbose=False):
     imgs = []
     for filename in sorted(os.listdir(in_PATH)):
@@ -36,36 +40,28 @@ def load_images(in_PATH, verbose=False):
         imgs.append(pix_norm)
     return np.array(imgs)
 
+# Reads in all the images in a directory and saves them to an .npy file.
 def compile_images(in_PATH, out_PATH):
     imgs = load_images(in_PATH, verbose=True)
     np.save(out_PATH, imgs)
 
-def preprocess_images_inpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
+# Masks and preprocesses an (m, IMAGE_SZ, IMAGE_SZ, 3) batch of images for image outpainting.
+# Returns: numpy array of size (m, IMAGE_SZ, IMAGE_SZ, 4)
+def preprocess_images_outpainting(imgs, crop=True):
     m = imgs.shape[0]
-    imgs = np.array(imgs, copy=True) # Don't want to overwrite
-    pix_avg = np.mean(imgs, axis=(1, 2, 3))
-    if crop:
-        imgs[:, int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = pix_avg[:, np.newaxis, np.newaxis, np.newaxis]
-    mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
-    mask[:, int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), int(3 * IMAGE_SZ / 8):int(-3 * IMAGE_SZ / 8), :] = 1.0
-    imgs_p = np.concatenate((imgs, mask), axis=3)
-    return imgs_p
-
-def preprocess_images_outpainting(imgs, crop=True): # Outputs [m, IMAGE_SZ, IMAGE_SZ, 4]
-    m = imgs.shape[0]
-    imgs = np.array(imgs, copy=True) # Don't want to overwrite
+    imgs = np.array(imgs, copy=True)
     pix_avg = np.mean(imgs, axis=(1, 2, 3))
     if crop:
         imgs[:, :, :int(2 * IMAGE_SZ / 8), :] = imgs[:, :, int(-2 * IMAGE_SZ / 8):, :] = pix_avg[:, np.newaxis, np.newaxis, np.newaxis]
-
     mask = np.zeros((m, IMAGE_SZ, IMAGE_SZ, 1))
     mask[:, :, :int(2 * IMAGE_SZ / 8), :] = mask[:, :, int(-2 * IMAGE_SZ / 8):, :] = 1.0
     imgs_p = np.concatenate((imgs, mask), axis=3)
     return imgs_p
 
-# Preprocesses a single image for gen (expands the size)
+# Expands and preprocesses a single (h, w, 3) image for image outpainting.
+# Returns: numpy array of size (h, w + 2 * dw, 4)
 def preprocess_images_gen(img):
-    img = np.array(img, copy=True) # Don't want to overwrite
+    img = np.array(img, copy=True)
     pix_avg = np.mean(img)
     dw = int(2 * IMAGE_SZ / 8) # Amount that will be outpainted on each side
     img_expand = np.ones((img.shape[0], img.shape[1] + 2 * dw, img.shape[2])) * pix_avg
@@ -75,48 +71,31 @@ def preprocess_images_gen(img):
     img_p = np.concatenate((img_expand, mask), axis=2)
     return img_p[np.newaxis]
 
-def generate_rand_img(batch_size, w, h, nc): # width, height, number of channels, TODO: make the mask actually a binary thing
-    # return tf.random_uniform([batch_size, w, h, nc], minval=0, maxval=256, dtype=tf.float32)
-    return np.zeros((batch_size, w, h, nc), dtype=np.float32)
-
+# Renormalizes an image to [0, 255].
 def norm_image(img_r):
-    min_val = np.min(img_r)
-    max_val = np.max(img_r)
-    # img_norm = (255.0 * (img_r - min_val) / (max_val - min_val)).astype(np.int8)
     img_norm = (img_r * 255.0).astype(np.uint8)
     return img_norm
 
-def vis_image(img_r, mode='RGB'): # img should have 3 channels. Values will be normalized and truncated to [0, 255]
+# Visualize an image.
+def vis_image(img_r, mode='RGB'):
     img_norm = norm_image(img_r)
     img = Image.fromarray(img_norm, mode)
     img.show()
 
+# Save an image as a .png file.
 def save_image(img_r, name, mode='RGB'):
     img_norm = norm_image(img_r)
     img = Image.fromarray(img_norm, mode)
     img.save(name, format='PNG')
 
-def upsample_CIFAR(batch): # Rescales (m, CIFAR_SZ, CIFAR_SZ, 3) -> (m, IMAGE_SZ, IMAGE_SZ, 3)
-    return np.array([scipy.misc.imresize(img, (IMAGE_SZ, IMAGE_SZ, 3), interp='cubic') for img in batch])
-
-def read_in_CIFAR(file_name, class_label=None): # Returns numpy array of size (m, IMAGE_SZ, IMAGE_SZ, 3)
-    # NOTE: See https://www.cs.toronto.edu/~kriz/cifar.html
-    import pickle
-    with open(file_name, 'rb') as fo:
-        data = pickle.load(fo, encoding='bytes')
-        raw_images = data[b'data']
-        classes = np.array(data[b'labels'])
-    if class_label is not None:
-        raw_images = raw_images[classes == class_label]
-    class_images_np = np.array(raw_images)
-    class_images_resized = np.transpose(np.reshape(class_images_np, (-1, 3, CIFAR_SZ, CIFAR_SZ)), (0, 2, 3, 1))
-    class_images_upsampled = upsample_CIFAR(class_images_resized) # Upsample when loading data to save time during training
-    return class_images_upsampled / 255.0 # Need to normalize images to [0, 1]
-
-def sample_random_minibatch(data, data_p, m): # Returns two numpy arrays of size (m, 64, 64, 3)
+# Sample a random minibatch from data.
+# Returns: Two numpy arrays, representing examples and their corresponding
+#          preprocessed arrays.
+def sample_random_minibatch(data, data_p, m):
     indices = np.random.randint(0, data.shape[0], m)
     return data[indices], data_p[indices]
 
+# Plots the loss and saves the plot.
 def plot_loss(loss_filename, title, out_filename):
     loss = np.load(loss_filename)
     assert 'train_MSE_loss' in loss and 'dev_MSE_loss' in loss
@@ -131,6 +110,7 @@ def plot_loss(loss_filename, title, out_filename):
     plt.savefig(out_filename)
     plt.clf()
 
+# Plots the loss and saves the plot, but fancier.
 def plot_loss2(loss_filename, title, out_filename):
     loss = np.load(loss_filename)
     itrain_MSE_loss, train_MSE_loss = loss['itrain_MSE_loss'], loss['train_MSE_loss']
@@ -148,6 +128,7 @@ def plot_loss2(loss_filename, title, out_filename):
     plt.savefig(out_filename)
     plt.clf()
 
+# Use seamless cloning to improve the generator's output.
 def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH, blend=False): # img, img_0 are (64, 64, 3), mask is (64, 64, 1)
     src = cv2.imread(img_PATH)[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :]
     dst = cv2.imread(img_o_PATH)
@@ -160,6 +141,7 @@ def postprocess_images_outpainting(img_PATH, img_o_PATH, out_PATH, blend=False):
         out[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :] = src
     cv2.imwrite(out_PATH, out)
 
+# Use seamless cloning to improve the generator's output.
 def postprocess_images_gen(img, img_o, blend=False):
     src = img[:, :, ::-1].copy()
     dst = img_o[:, :, ::-1].copy()
@@ -172,33 +154,7 @@ def postprocess_images_gen(img, img_o, blend=False):
         out[:, int(2 * IMAGE_SZ / 8):-int(2 * IMAGE_SZ / 8), :] = src
     return out[:, :, ::-1].copy()
 
-def download_images(url_list_PATH, out_PATH, prefix):
-    with open(url_list_PATH, 'r') as fp:
-        for i, line in enumerate(fp):
-            url = line.strip()
-            _, ext = os.path.splitext(url)
-            dst = os.path.abspath(os.path.join(out_PATH, prefix + str(i) + ext))
-            try:
-                filename = wget.download(url, dst)
-            except:
-                continue
-            print('Downloaded %s' % filename)
-
-def delete_blank_images(url_PATH, ref_img_PATH):
-    ref_img = Image.open(os.path.abspath(ref_img_PATH)).convert('RGB')
-    ref_img_array = np.array(ref_img)
-    for filename in os.listdir(url_PATH):
-        try:
-            img = Image.open(os.path.join(os.path.abspath(url_PATH), filename)).convert('RGB')
-        except:
-            print('Invalid file: Deleting %s' % filename)
-            os.remove(os.path.join(os.path.abspath(url_PATH), filename))
-            continue
-        img_array = np.array(img)
-        if img_array.shape == ref_img_array.shape and np.sum(img_array) == np.sum(ref_img_array):
-            print('Deleting %s' % filename)
-            os.remove(os.path.join(os.path.abspath(url_PATH), filename))
-
+# Crop and resize all the images in a directory.
 def resize_images(src_PATH, dst_PATH):
     for filename in os.listdir(src_PATH):
         print('Processing %s' % filename)
@@ -217,13 +173,7 @@ def resize_images(src_PATH, dst_PATH):
         full_outfilename = os.path.join(os.path.abspath(dst_PATH), filename)
         img_scale.save(full_outfilename, format='PNG')
 
-def compute_MSE_loss(img1, img2):
-    mask = np.zeros((IMAGE_SZ, IMAGE_SZ, 1))
-    mask[:, :int(2 * IMAGE_SZ / 8), :] = mask[:, int(-2 * IMAGE_SZ / 8):, :] = 1.0
-    img1_mask = (img1 / 255.0) * mask
-    img2_mask = (img2 / 255.0) * mask
-    return np.mean((img1_mask - img2_mask) ** 2)
-
+# Parse the output of train.py to extract the various losses.
 def parse_log(in_PATH, out_PATH):
     data = []
     curr_list = []
@@ -285,7 +235,8 @@ def parse_log(in_PATH, out_PATH):
     np.savez(out_PATH, train_MSE_loss=G_MSE_train_sm, dev_MSE_loss=G_MSE_dev_sm, G_loss=G_sm, D_loss=C_sm,
              itrain_MSE_loss=G_MSE_train_ism, idev_MSE_loss=G_MSE_dev_ism, iG_loss=G_ism, iD_loss=C_ism)
 
-def parse_MSE_loss(loss_file, window_size, outfile):
+# Smoothes the MSE loss in the output loss file to make plotting easier.
+def smooth_MSE_loss(loss_file, window_size, outfile):
     losses = np.load(loss_file)
     train = losses['train_MSE_loss']
     dev = losses['dev_MSE_loss']
@@ -295,10 +246,10 @@ def parse_MSE_loss(loss_file, window_size, outfile):
         window_avg = np.sum(train[i:i+window_size, 1]) / float(window_size)
         window_avg_val = np.sum(train[i:i+window_size, 0]) / float(window_size)
         new_train_list.append([window_avg_val, window_avg])
-
     np_train = np.array(new_train_list[:-2])
     np.savez(outfile, train_MSE_loss=np_train, dev_MSE_loss=dev)
 
+# Create a GIF to enable visualization of generator outputs over the course of training.
 def create_GIF(in_PATH, prefix, out_PATH):
     indices = range(0, 227401, 200)
     images = []
@@ -311,6 +262,7 @@ def create_GIF(in_PATH, prefix, out_PATH):
     images = images[:50] + images[50::10] + [images[-1]]
     imageio.mimwrite(out_PATH, images, loop=1, duration=0.1)
 
+# Compute the RMSE between a ground truth and outpainted image.
 def compute_RMSE(image_gt_PATH, image_o_PATH):
     im_gt = np.array(Image.open(image_gt_PATH).convert('RGB')).astype(np.float64)
     im_o = np.array(Image.open(image_o_PATH).convert('RGB')).astype(np.float64)

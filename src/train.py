@@ -1,3 +1,9 @@
+# proj:    image-outpainting
+# file:    train.py
+# authors: Mark Sabini, Gili Rusak
+# desc:    Train the model specified in model.py, which only
+#          uses a global discriminator.
+# -------------------------------------------------------------
 import tensorflow as tf
 import numpy as np
 from PIL import Image
@@ -6,16 +12,9 @@ import util
 import os
 import sys
 
-tf.reset_default_graph() # TODO: Check this doesn't break stuff
+tf.reset_default_graph()
 
-'''
-Input to the network is RGB image with binary channel indicating image completion (1 for pixel to be completed) (Iizuka)
-Padding VALID: filter fits entirely, Padding SAME: preserves shape
-'''
-
-# np.random.seed(0)
-# tf.set_random_seed(0)
-
+# Places365 Training Hyperparameters
 BATCH_SZ = 16
 VERBOSE = False
 EPSILON = 1e-9
@@ -24,21 +23,37 @@ OUT_DIR = 'output'
 MODEL_DIR = os.path.join(OUT_DIR, 'models')
 INFO_PATH = os.path.join(OUT_DIR, 'run.txt')
 N_TEST = 10
+N_ITERS = 227500
+N_ITERS_P1 = 40950 # How many iterations to train in phase 1
+N_ITERS_P2 = 4550 # How many iterations to train in phase 2
+INTV_PRINT = 200 # How often to print
+INTV_SAVE = 1000 # How often to save the model
+ALPHA = 0.0004
 
+'''
+# City Training Hyperparameters
+BATCH_SZ = 1
+VERBOSE = False
+EPSILON = 1e-9
+IMAGE_SZ = 128
+OUT_DIR = 'output'
+MODEL_DIR = os.path.join(OUT_DIR, 'models')
+INFO_PATH = os.path.join(OUT_DIR, 'run.txt')
+N_TEST = 1
+N_ITERS = 5000
+N_ITERS_P1 = 1000 # How many iterations to train in phase 1
+N_ITERS_P2 = 400 # How many iterations to train in phase 2
+INTV_PRINT = 50 # How often to print
+INTV_SAVE = 10000 # How often to save the model
+ALPHA = 0.0004
+'''
+
+# Check that we don't clobber a pre-existing run
 if len(sys.argv) < 2 and os.path.isdir(OUT_DIR) and len(os.listdir(OUT_DIR)) > 2:
     print('Warning, OUT_DIR already exists. Aborting.')
     exit()
 
-if not os.path.isdir(OUT_DIR):
-    os.makedirs(OUT_DIR)
-
-if not os.path.isdir(MODEL_DIR):
-    os.makedirs(MODEL_DIR)
-
-if not os.path.isfile(INFO_PATH):
-    print('Error: run.txt not found! Create file before proceeding.')
-    exit()
-
+# Load in a model if specified as the second argument.
 start_iter = 0
 model_filename = None
 if len(sys.argv) >= 2:
@@ -49,6 +64,7 @@ if len(sys.argv) >= 2:
 G_Z = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 4], name='G_Z')
 DG_X = tf.placeholder(tf.float32, shape=[None, IMAGE_SZ, IMAGE_SZ, 3], name='DG_X')
 
+# Load Places365 data
 data = np.load('places/places_128.npz')
 imgs = data['imgs_train'] # Originally from http://data.csail.mit.edu/places/places365/val_256.tar
 imgs_p = util.preprocess_images_outpainting(imgs)
@@ -62,11 +78,26 @@ test_img_p = test_imgs_p[:N_TEST]
 train_img = imgs[4, np.newaxis]
 train_img_p = imgs_p[4, np.newaxis]
 
+'''
+# Load city image data
+imgs = util.load_city_image()
+imgs_p = util.preprocess_images_outpainting(imgs)
+
+test_imgs = util.load_city_image()
+test_imgs_p = util.preprocess_images_outpainting(test_imgs)
+
+test_img = test_imgs
+test_img_p = test_imgs_p
+
+train_img = imgs
+train_img_p = imgs_p
+'''
+
+# Write training and testing sample ground truths as reference
 util.save_image(train_img[0], os.path.join(OUT_DIR, 'train_img.png'))
 for i_test in range(N_TEST):
     util.save_image(test_imgs[i_test], os.path.join(OUT_DIR, 'test_img_%d.png' % i_test))
 
-# FOR DEBUGGING:
 G_sample = model.generator(G_Z)
 vars_G = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='G')
 
@@ -75,22 +106,13 @@ C_fake = model.concatenator(model.global_discriminator(G_sample))
 vars_DG = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='DG')
 vars_C = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='C')
 
-# http://www.cvc.uab.es/people/joans/slides_tensorflow/tensorflow_html/gan.html
 C_loss = -tf.reduce_mean(tf.log(tf.maximum(C_real, EPSILON)) + tf.log(tf.maximum(1. - C_fake, EPSILON)))
 G_MSE_loss = tf.losses.mean_squared_error(G_sample, DG_X, weights=tf.expand_dims(G_Z[:,:,:,3], -1)) # TODO: MULTIPLY with mask. Actually see if we want to remove this.
-ALPHA = 0.0004
 G_loss = G_MSE_loss - ALPHA * tf.reduce_mean(tf.log(tf.maximum(C_fake, EPSILON)))
 
 C_solver = tf.train.AdamOptimizer().minimize(C_loss, var_list=(vars_DG + vars_C))
 G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=vars_G)
 G_MSE_solver = tf.train.AdamOptimizer().minimize(G_MSE_loss, var_list=vars_G)
-
-N_ITERS = 227500
-N_ITERS_P1 = 40950 # How many iterations to train in phase 1
-N_ITERS_P2 = 4550 # How many iterations to train in phase 2
-
-INTV_PRINT = 200 # How often to print
-INTV_SAVE = 1000 # How often to save the model
 
 train_MSE_loss = []
 dev_MSE_loss = []
@@ -108,7 +130,6 @@ with tf.Session() as sess:
     else:
         saver.restore(sess, model_filename)
     for i in range(start_iter, N_ITERS + 1):
-        # TODO: Sample batches from training set
         batch, batch_p = util.sample_random_minibatch(imgs, imgs_p, BATCH_SZ)
         G_sample_ = None
         C_loss_curr, G_loss_curr, G_MSE_loss_curr = None, None, None
@@ -132,7 +153,7 @@ with tf.Session() as sess:
             if VERBOSE:
                 print((i, G_loss_curr, 'G', np.min(C_fake_), np.max(C_fake_)))
 
-
+        # Periodically test the generator on held-out images
         if i % INTV_PRINT == 0:
             G_MSE_loss_curr_dev = None
             if G_sample_ is not None:
