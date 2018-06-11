@@ -310,3 +310,13 @@ def create_GIF(in_PATH, prefix, out_PATH):
             continue
     images = images[:50] + images[50::10] + [images[-1]]
     imageio.mimwrite(out_PATH, images, loop=1, duration=0.1)
+
+def compute_RMSE(image_gt_PATH, image_o_PATH):
+    im_gt = np.array(Image.open(image_gt_PATH).convert('RGB')).astype(np.float64)
+    im_o = np.array(Image.open(image_o_PATH).convert('RGB')).astype(np.float64)
+    assert im_gt.shape == (128, 128, 3)
+    assert im_o.shape == (128, 128, 3)
+    M = np.ones((128, 128, 3))
+    M[:, 32:96, :] = 0
+    num_pixels = 128 * 64 * 3
+    return np.sqrt(np.sum(((im_gt - im_o) * M) ** 2) / num_pixels)
