@@ -7,7 +7,7 @@ We designed and implemented a pipeline for **image outpainting** for our final p
 ## Quick Links
 
 * Paper: [https://arxiv.org/abs/1808.08483](https://arxiv.org/abs/1808.08483)
-* Poster: [poster/msabini-gili__image-outpainting-poster.pdf](https://github.com/ShinyCode/image-outpainting/blob/master/poster/msabini-gili__image-outpainting-poster.pdf)
+* Poster: [image-outpainting/poster/msabini-gili__image-outpainting-poster.pdf](https://github.com/ShinyCode/image-outpainting/blob/master/poster/msabini-gili__image-outpainting-poster.pdf)
 * Training animation: [http://marksabini.com/cs230-outpainting](http://marksabini.com/cs230-outpainting)
 
 ## Environment Setup
