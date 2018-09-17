@@ -17,7 +17,7 @@ These instructions assume that the current working directory `[cwd]` is `[repo]/
 * If desired, use an AWS instance. We used `p2.xlarge`, and the CS 230 website has a good setup guide here: https://cs230-stanford.github.io/aws-starter-guide.html. We also recommend reserving a static IP for AWS instances to make `ssh` and `scp` easier.
 
 
-* Install the necessary dependencies. The main ones are TensorFlow , OpenCV, NumPy, SciPy, and PIL.
+* Install the necessary dependencies. The main ones are TensorFlow, OpenCV, NumPy, SciPy, and PIL.
 
 * Clone the repo: `>> git clone https://github.com/ShinyCode/image-outpainting.git`
 
