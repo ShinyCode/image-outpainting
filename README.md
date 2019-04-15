@@ -36,7 +36,7 @@ These instructions assume that the current working directory `[cwd]` is `[repo]/
   >> import numpy as np
   >> data = np.load('places/all_images.npy')
   >> idx_test = np.random.choice(36500, 100, replace=False)
-  >> idx_train = list(set(range(36500)) - set(test_indices))
+  >> idx_train = list(set(range(36500)) - set(idx_test))
   >> imgs_train = data[idx_train]
   >> imgs_test = data[idx_test]
   >> np.savez('places/places_128.npz', imgs_train, imgs_test, idx_train, idx_test)
