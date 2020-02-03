@@ -39,7 +39,7 @@ These instructions assume that the current working directory `[cwd]` is `[repo]/
   >> idx_train = list(set(range(36500)) - set(idx_test))
   >> imgs_train = data[idx_train]
   >> imgs_test = data[idx_test]
-  >> np.savez('places/places_128.npz', imgs_train, imgs_test, idx_train, idx_test)
+  >> np.savez('places/places_128.npz', imgs_train=imgs_train, imgs_test=imgs_test, idx_train=idx_train, idx_test=idx_test)
   ```
 
   Strictly speaking, saving the indices (`idx_train`, `idx_test`) isn't necessary, but it will help later to correlate results with the original images.
